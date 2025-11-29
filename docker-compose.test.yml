@@ -1,0 +1,82 @@
+# Orizon - Test Docker Compose Configuration
+# Separate test environment - runs alongside development
+
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: orizon-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_password}
+      POSTGRES_DB: orizon_test
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with dev
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d orizon_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - orizon-test-network
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: orizon-redis-test
+    command: redis-server --requirepass ${REDIS_PASSWORD:-test_password}
+    ports:
+      - "6380:6379"  # Different port to avoid conflict with dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - orizon-test-network
+
+  orizon-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: runtime
+    container_name: orizon-test
+    environment:
+      # Test database
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-test_password}@postgres-test:5432/orizon_test
+
+      # Test Redis
+      REDIS_HOST: redis-test
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-test_password}
+      REDIS_PORT: 6379
+
+      # Test LiteLLM keys
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-test-master-key}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:-sk-test-salt-key}
+      STORE_MODEL_IN_DB: "True"
+
+      # Test mode flag
+      TESTING: "True"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    volumes:
+      - ./orizon:/app/orizon:ro
+      - ./tests:/app/tests:ro
+    command: ["pytest", "-v", "--cov=orizon", "--cov-report=term-missing"]
+    networks:
+      - orizon-test-network
+
+volumes:
+  postgres-test-data:
+    name: orizon-postgres-test-data
+
+networks:
+  orizon-test-network:
+    name: orizon-test-network
+    driver: bridge
