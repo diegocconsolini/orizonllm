@@ -12,9 +12,18 @@ Components:
 - routes.py: Auth API endpoints
 """
 
-from .utils import get_user_email, get_user_name
+from .utils import (
+    get_user_email,
+    get_user_name,
+    get_or_create_user,
+    get_or_create_user_key,
+    generate_user_id,
+)
 
 __all__ = [
     "get_user_email",
     "get_user_name",
+    "get_or_create_user",
+    "get_or_create_user_key",
+    "generate_user_id",
 ]

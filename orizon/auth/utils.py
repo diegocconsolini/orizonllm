@@ -209,3 +209,125 @@ async def get_or_create_user(email: str) -> Optional[dict]:
         return await get_user(user_id)
 
     return None
+
+
+async def create_key_for_user(user_id: str) -> Optional[str]:
+    """Create a new virtual key for user.
+
+    Args:
+        user_id: LiteLLM user ID
+
+    Returns:
+        Virtual key string or None on failure
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{LITELLM_BASE_URL}/key/generate",
+                json={
+                    "user_id": user_id,
+                    "key_alias": f"orizon-auto-{user_id}",
+                },
+                headers={
+                    "Authorization": f"Bearer {LITELLM_MASTER_KEY}",
+                    "Content-Type": "application/json",
+                },
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                key = data.get("key")
+                if key:
+                    logger.info(f"Created new key for user {user_id}")
+                    return key
+                return None
+            else:
+                logger.error(
+                    f"Error creating key for user {user_id}: "
+                    f"{response.status_code} - {response.text}"
+                )
+                return None
+
+        except httpx.RequestError as e:
+            logger.error(f"Request error creating key for {user_id}: {e}")
+            return None
+
+
+def get_user_virtual_key(user_data: dict) -> Optional[str]:
+    """Extract virtual key from user data.
+
+    The user data from get_user() includes a 'keys' array.
+    This function extracts the first available key.
+
+    Args:
+        user_data: User data dict from get_user()
+
+    Returns:
+        Virtual key string or None if no keys exist
+    """
+    keys = user_data.get("keys", [])
+
+    if not keys:
+        logger.warning("No keys found for user")
+        return None
+
+    # Get the first key (most recently created)
+    first_key = keys[0]
+
+    # Keys have 'token' (hashed) but we need the actual key
+    # The actual key is returned only at creation time
+    # For existing users, we need to create a new key
+    key_name = first_key.get("key_name", "")
+
+    logger.debug(f"Found key: {key_name}")
+
+    # Return the key_name as indicator (actual key is not retrievable)
+    # We'll need to handle this in the middleware
+    return key_name
+
+
+async def get_or_create_user_key(email: str) -> tuple[Optional[dict], Optional[str]]:
+    """Get or create user and ensure they have a virtual key.
+
+    This is the main function for the auth middleware.
+    It handles:
+    1. User auto-provisioning
+    2. Virtual key retrieval/creation
+
+    Args:
+        email: User email address
+
+    Returns:
+        Tuple of (user_data, virtual_key) or (None, None) on failure
+    """
+    user_id = generate_user_id(email)
+
+    # Try to get existing user
+    user_data = await get_user(user_id)
+
+    if user_data:
+        logger.info(f"Found existing user: {user_id}")
+
+        # Check for existing keys
+        keys = user_data.get("keys", [])
+        if keys:
+            # User has keys - but we can't retrieve the actual key value
+            # Need to create a new one for this session
+            logger.debug("User has existing keys, creating new session key")
+
+        # Create a new key for this auth session
+        new_key = await create_key_for_user(user_id)
+        return user_data, new_key
+
+    # Create new user (this also creates a key)
+    logger.info(f"Creating new user for: {email}")
+    created = await create_user(email, user_id)
+
+    if created:
+        # The created response includes the key
+        new_key = created.get("key")
+        user_data = await get_user(user_id)
+        return user_data, new_key
+
+    return None, None

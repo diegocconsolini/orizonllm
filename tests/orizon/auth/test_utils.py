@@ -11,6 +11,9 @@ from orizon.auth.utils import (
     get_user,
     create_user,
     get_or_create_user,
+    create_key_for_user,
+    get_user_virtual_key,
+    get_or_create_user_key,
 )
 
 
@@ -282,3 +285,146 @@ class TestGetOrCreateUser:
 
                 assert result == new_user
                 mock_create.assert_called_once()
+
+
+class TestCreateKeyForUser:
+    """Tests for create_key_for_user function."""
+
+    @pytest.mark.asyncio
+    async def test_creates_key_successfully(self):
+        """Should create key and return it."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "key": "sk-new-virtual-key",
+            "user_id": "orizon-abc123",
+        }
+
+        with patch("orizon.auth.utils.httpx.AsyncClient") as mock_client:
+            mock_instance = AsyncMock()
+            mock_instance.post.return_value = mock_response
+            mock_instance.__aenter__.return_value = mock_instance
+            mock_instance.__aexit__.return_value = None
+            mock_client.return_value = mock_instance
+
+            result = await create_key_for_user("orizon-abc123")
+
+            assert result == "sk-new-virtual-key"
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_failure(self):
+        """Should return None when key creation fails."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "Server Error"
+
+        with patch("orizon.auth.utils.httpx.AsyncClient") as mock_client:
+            mock_instance = AsyncMock()
+            mock_instance.post.return_value = mock_response
+            mock_instance.__aenter__.return_value = mock_instance
+            mock_instance.__aexit__.return_value = None
+            mock_client.return_value = mock_instance
+
+            result = await create_key_for_user("orizon-abc123")
+
+            assert result is None
+
+
+class TestGetUserVirtualKey:
+    """Tests for get_user_virtual_key function."""
+
+    def test_extracts_key_from_user_data(self):
+        """Should extract key_name from user data."""
+        user_data = {
+            "user_id": "orizon-abc123",
+            "keys": [{"key_name": "sk-...abc", "token": "hashed"}],
+        }
+
+        result = get_user_virtual_key(user_data)
+
+        assert result == "sk-...abc"
+
+    def test_returns_none_when_no_keys(self):
+        """Should return None when user has no keys."""
+        user_data = {
+            "user_id": "orizon-abc123",
+            "keys": [],
+        }
+
+        result = get_user_virtual_key(user_data)
+
+        assert result is None
+
+    def test_returns_none_for_missing_keys_field(self):
+        """Should return None when keys field missing."""
+        user_data = {"user_id": "orizon-abc123"}
+
+        result = get_user_virtual_key(user_data)
+
+        assert result is None
+
+
+class TestGetOrCreateUserKey:
+    """Tests for get_or_create_user_key function."""
+
+    @pytest.mark.asyncio
+    async def test_returns_existing_user_with_new_key(self):
+        """Should return existing user and create new key."""
+        existing_user = {
+            "user_id": "orizon-abc123",
+            "user_info": {"user_email": "user@example.com"},
+            "keys": [{"key_name": "sk-...old"}],
+        }
+
+        with patch("orizon.auth.utils.get_user", new_callable=AsyncMock) as mock_get:
+            with patch(
+                "orizon.auth.utils.create_key_for_user", new_callable=AsyncMock
+            ) as mock_key:
+                mock_get.return_value = existing_user
+                mock_key.return_value = "sk-new-session-key"
+
+                user_data, key = await get_or_create_user_key("user@example.com")
+
+                assert user_data == existing_user
+                assert key == "sk-new-session-key"
+                mock_key.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_creates_new_user_returns_key(self):
+        """Should create user and return key from creation response."""
+        new_user = {
+            "user_id": "orizon-abc123",
+            "user_info": {"user_email": "new@example.com"},
+            "keys": [],
+        }
+
+        with patch("orizon.auth.utils.get_user", new_callable=AsyncMock) as mock_get:
+            with patch(
+                "orizon.auth.utils.create_user", new_callable=AsyncMock
+            ) as mock_create:
+                # First call returns None, second returns created user
+                mock_get.side_effect = [None, new_user]
+                mock_create.return_value = {
+                    "user_id": "orizon-abc123",
+                    "key": "sk-created-key",
+                }
+
+                user_data, key = await get_or_create_user_key("new@example.com")
+
+                assert user_data == new_user
+                assert key == "sk-created-key"
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_failure(self):
+        """Should return None tuple when creation fails."""
+        with patch("orizon.auth.utils.get_user", new_callable=AsyncMock) as mock_get:
+            with patch(
+                "orizon.auth.utils.create_user", new_callable=AsyncMock
+            ) as mock_create:
+                mock_get.return_value = None
+                mock_create.return_value = None
+
+                user_data, key = await get_or_create_user_key("fail@example.com")
+
+                assert user_data is None
+                assert key is None
