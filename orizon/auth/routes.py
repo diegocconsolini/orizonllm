@@ -21,6 +21,7 @@ from .utils import generate_user_id, get_or_create_user_key, get_user
 from .tokens import create_magic_link_token, verify_magic_link_token
 from .email import send_magic_link_email
 from .sessions import create_session, set_session_cookie, delete_session, clear_session_cookie, get_session_cookie
+from .oauth import generate_oauth_state, get_github_authorize_url, complete_github_auth
 
 logger = logging.getLogger(__name__)
 
@@ -245,3 +246,102 @@ async def logout(request: Request, response: Response):
     clear_session_cookie(response)
 
     return {"success": True, "message": "Logged out successfully"}
+
+
+# OAuth state storage (in-memory for simplicity, use Redis in production)
+_oauth_states: dict[str, bool] = {}
+
+
+@router.get("/github")
+async def github_auth(response: Response):
+    """Start GitHub OAuth flow.
+
+    Redirects user to GitHub authorization page.
+    """
+    # Generate state for CSRF protection
+    state = generate_oauth_state()
+    _oauth_states[state] = True
+
+    # Get authorization URL
+    auth_url = get_github_authorize_url(state)
+
+    # Redirect to GitHub
+    response.status_code = 302
+    response.headers["Location"] = auth_url
+    return {"redirect": auth_url}
+
+
+@router.get("/github/callback")
+async def github_callback(
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    response: Response = None,
+):
+    """Handle GitHub OAuth callback.
+
+    Exchanges code for token and creates session.
+    """
+    # Check for OAuth errors
+    if error:
+        raise HTTPException(
+            status_code=400,
+            detail=f"GitHub authorization failed: {error}",
+        )
+
+    if not code or not state:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing authorization code or state",
+        )
+
+    # Verify state (CSRF protection)
+    if state not in _oauth_states:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OAuth state",
+        )
+    del _oauth_states[state]
+
+    # Complete GitHub auth flow
+    github_user = await complete_github_auth(code)
+
+    if not github_user:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to authenticate with GitHub",
+        )
+
+    email = github_user["email"]
+    name = github_user.get("name")
+
+    # Create/get user in LiteLLM
+    user_data, virtual_key = await get_or_create_user_key(email)
+
+    if not user_data or not virtual_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create user account",
+        )
+
+    # Create session
+    user_id = user_data.get("user_id") or user_data.get("user_info", {}).get("user_id")
+    session_token = await create_session(
+        email=email,
+        user_id=user_id,
+        virtual_key=virtual_key,
+        name=name,
+    )
+
+    # Set session cookie
+    set_session_cookie(response, session_token)
+
+    # Redirect to profile/dashboard
+    response.status_code = 302
+    response.headers["Location"] = "/profile"
+
+    return {
+        "success": True,
+        "email": email,
+        "name": name,
+    }
