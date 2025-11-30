@@ -20,7 +20,7 @@ from pydantic import BaseModel, EmailStr
 from .utils import generate_user_id, get_or_create_user_key, get_user
 from .tokens import create_magic_link_token, verify_magic_link_token
 from .email import send_magic_link_email
-from .sessions import create_session, set_session_cookie, delete_session, clear_session_cookie, get_session_cookie
+from .sessions import create_session, set_session_cookie, delete_session, clear_session_cookie, get_session_cookie, get_current_session
 from .oauth import generate_oauth_state, get_github_authorize_url, complete_github_auth
 
 logger = logging.getLogger(__name__)
@@ -64,6 +64,37 @@ class TokenVerifyResponse(BaseModel):
     email: Optional[str] = None
     virtual_key: Optional[str] = None
     message: str
+
+
+class ProfileResponse(BaseModel):
+    """User profile response."""
+
+    email: str
+    name: Optional[str] = None
+    user_id: Optional[str] = None
+    virtual_key: Optional[str] = None
+
+
+@router.get("/me", response_model=ProfileResponse)
+async def get_profile(request: Request):
+    """Get current user profile.
+
+    Requires valid session cookie.
+    """
+    session = await get_current_session(request)
+
+    if not session:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated",
+        )
+
+    return ProfileResponse(
+        email=session.get("email", ""),
+        name=session.get("name"),
+        user_id=session.get("user_id"),
+        virtual_key=session.get("virtual_key"),
+    )
 
 
 @router.post("/signup", response_model=AuthResponse)

@@ -38,6 +38,12 @@ async def login_page(request: Request):
     return HTMLResponse(content=read_template("login.html"))
 
 
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+    """Serve the profile page."""
+    return HTMLResponse(content=read_template("profile.html"))
+
+
 def setup_static_files(app):
     """Mount static files directory."""
     if STATIC_DIR.exists():
