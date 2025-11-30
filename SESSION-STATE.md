@@ -85,7 +85,7 @@ curl -s http://localhost:4010/health/liveliness
 ## Next: Phase 1 - Authentication (Weeks 2-4)
 
 ### Checkpoint 1.1: Create Auth Middleware File
-**Branch:** `phase-1-authentication`
+**Branch:** `phase-0-foundation` (continue on same branch)
 **Estimated time:** 20 minutes
 
 **Tasks:**
@@ -97,7 +97,7 @@ curl -s http://localhost:4010/health/liveliness
 **Commands to start:**
 ```bash
 cd /home/diegocc/orizon-repo
-git checkout -b phase-1-authentication
+git pull  # ensure latest
 ```
 
 ### Full Phase 1 Checkpoint List
