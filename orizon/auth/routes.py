@@ -19,6 +19,7 @@ from pydantic import BaseModel, EmailStr
 
 from .utils import generate_user_id, get_or_create_user_key, get_user
 from .tokens import create_magic_link_token, verify_magic_link_token
+from .email import send_magic_link_email
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +93,17 @@ async def signup(request: Request, body: SignupRequest):
             is_signup=True,
         )
 
-        # TODO: Send magic link email (Checkpoint 1.9)
-        # For now, just log the token
-        logger.info(f"Magic link token generated for {body.email}: {token[:20]}...")
+        # Send magic link email
+        email_sent = await send_magic_link_email(
+            to_email=body.email,
+            token=token,
+            name=body.name,
+            is_signup=True,
+        )
+
+        if not email_sent:
+            logger.warning(f"Failed to send magic link email to {body.email}")
+            # Continue anyway - token is valid, user might retry
 
         return AuthResponse(
             success=True,
@@ -138,8 +147,16 @@ async def login(request: Request, body: LoginRequest):
             is_signup=False,
         )
 
-        # TODO: Send magic link email (Checkpoint 1.9)
-        logger.info(f"Magic link token generated for {body.email}: {token[:20]}...")
+        # Send magic link email (even if user doesn't exist - prevents enumeration)
+        if user_data:
+            email_sent = await send_magic_link_email(
+                to_email=body.email,
+                token=token,
+                is_signup=False,
+            )
+
+            if not email_sent:
+                logger.warning(f"Failed to send magic link email to {body.email}")
 
         return AuthResponse(
             success=True,
