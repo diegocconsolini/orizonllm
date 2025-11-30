@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Orizon</title>
+    <link rel="stylesheet" href="/static/css/auth.css">
+    <link rel="stylesheet" href="/static/css/profile.css">
+</head>
+<body>
+    <div class="profile-container">
+        <nav class="profile-nav">
+            <a href="/" class="logo">Orizon</a>
+            <button id="logout-btn" class="btn btn-outline">Log out</button>
+        </nav>
+
+        <div class="profile-content">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="avatar" id="user-avatar">
+                        <!-- Will be filled with initials or image -->
+                    </div>
+                    <div class="profile-info">
+                        <h1 id="user-name">Loading...</h1>
+                        <p id="user-email" class="email">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h2>API Key</h2>
+                    <p class="section-description">
+                        Use this key to authenticate API requests to Orizon.
+                    </p>
+                    <div class="api-key-container">
+                        <code id="api-key" class="api-key">Loading...</code>
+                        <button id="copy-key-btn" class="btn btn-small" title="Copy to clipboard">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p class="api-key-hint">
+                        Keep this key secret. Do not share it or commit it to version control.
+                    </p>
+                </div>
+
+                <div class="profile-section">
+                    <h2>Usage</h2>
+                    <div class="usage-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="requests-count">-</span>
+                            <span class="stat-label">Requests today</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="tokens-count">-</span>
+                            <span class="stat-label">Tokens used</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/js/profile.js"></script>
+</body>
+</html>
