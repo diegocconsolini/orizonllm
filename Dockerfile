@@ -14,7 +14,8 @@ USER root
 # Install build dependencies
 # build-base: gcc, g++, make for building native extensions like grpcio
 # python3-dev: Python development headers
-RUN apk add --no-cache build-base python3-dev openssl openssl-dev
+# bash: Required for build scripts
+RUN apk add --no-cache build-base python3-dev openssl openssl-dev bash
 
 
 RUN pip install --upgrade pip>=24.3.1 && \
