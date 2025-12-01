@@ -13,8 +13,8 @@ USER root
 
 # Install build dependencies
 # Note: python3-dev removed - already included in :latest-dev base image
-# g++ required for building grpcio wheel
-RUN apk add --no-cache gcc g++ openssl openssl-dev
+# build-base includes gcc, g++, make for building native extensions like grpcio
+RUN apk add --no-cache build-base openssl openssl-dev
 
 
 RUN pip install --upgrade pip>=24.3.1 && \
