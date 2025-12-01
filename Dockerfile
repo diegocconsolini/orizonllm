@@ -12,7 +12,8 @@ WORKDIR /app
 USER root
 
 # Install build dependencies
-RUN apk add --no-cache gcc python3-dev openssl openssl-dev
+# Note: python3-dev removed - already included in :latest-dev base image
+RUN apk add --no-cache gcc openssl openssl-dev
 
 
 RUN pip install --upgrade pip>=24.3.1 && \
