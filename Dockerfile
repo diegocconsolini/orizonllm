@@ -1,8 +1,8 @@
-# Base image for building
-ARG LITELLM_BUILD_IMAGE=cgr.dev/chainguard/python:latest-dev
+# Base image for building - use Alpine for full build toolchain
+ARG LITELLM_BUILD_IMAGE=python:3.11-alpine
 
-# Runtime image
-ARG LITELLM_RUNTIME_IMAGE=cgr.dev/chainguard/python:latest-dev
+# Runtime image - use Alpine for compatibility
+ARG LITELLM_RUNTIME_IMAGE=python:3.11-alpine
 # Builder stage
 FROM $LITELLM_BUILD_IMAGE AS builder
 
@@ -12,9 +12,9 @@ WORKDIR /app
 USER root
 
 # Install build dependencies
-# Note: python3-dev removed - already included in :latest-dev base image
-# build-base includes gcc, g++, make for building native extensions like grpcio
-RUN apk add --no-cache build-base openssl openssl-dev
+# build-base: gcc, g++, make for building native extensions like grpcio
+# python3-dev: Python development headers
+RUN apk add --no-cache build-base python3-dev openssl openssl-dev
 
 
 RUN pip install --upgrade pip>=24.3.1 && \
