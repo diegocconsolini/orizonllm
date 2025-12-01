@@ -792,6 +792,15 @@ app = FastAPI(
     lifespan=proxy_startup_event,
 )
 
+# Orizon Integration - Custom AI Gateway
+try:
+    from orizon.app import setup_orizon
+    setup_orizon(app)
+except ImportError as e:
+    print(f"Warning: Orizon integration not available: {e}")
+except Exception as e:
+    print(f"Error setting up Orizon: {e}")
+
 vertex_live_passthrough_vertex_base = VertexBase()
 
 
