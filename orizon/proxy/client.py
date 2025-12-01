@@ -111,35 +111,46 @@ async def forward_request(
     logger.info(f"Proxying {request.method} {path} with key {virtual_key[:10]}...")
 
     try:
-        async with httpx.AsyncClient(timeout=PROXY_TIMEOUT) as client:
-            # Forward request
-            response = await client.request(
-                method=request.method,
-                url=target_url,
-                params=dict(request.query_params),
-                headers=headers,
-                content=body,
+        # Get pooled HTTP client
+        client = get_http_client()
+
+        # Forward request
+        response = await client.request(
+            method=request.method,
+            url=target_url,
+            params=dict(request.query_params),
+            headers=headers,
+            content=body,
+        )
+
+        # Check if response is streaming (SSE)
+        content_type = response.headers.get("content-type", "")
+        is_streaming = "text/event-stream" in content_type
+
+        if is_streaming:
+            # Stream the response
+            return StreamingResponse(
+                content=response.aiter_bytes(),
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=content_type,
             )
-
-            # Check if response is streaming (SSE)
-            content_type = response.headers.get("content-type", "")
-            is_streaming = "text/event-stream" in content_type
-
-            if is_streaming:
-                # Stream the response
-                return StreamingResponse(
-                    content=response.aiter_bytes(),
-                    status_code=response.status_code,
-                    headers=dict(response.headers),
-                    media_type=content_type,
-                )
-            else:
-                # Return JSON response
+        else:
+            # Return JSON response
+            try:
+                json_content = response.json() if response.content else {}
+            except (ValueError, Exception) as json_error:
+                logger.error(f"Malformed JSON response from LiteLLM: {json_error}")
                 return JSONResponse(
-                    status_code=response.status_code,
-                    content=response.json() if response.content else {},
-                    headers=dict(response.headers),
+                    status_code=502,
+                    content={"error": "Bad gateway - invalid JSON response from LiteLLM"},
                 )
+
+            return JSONResponse(
+                status_code=response.status_code,
+                content=json_content,
+                headers=dict(response.headers),
+            )
 
     except httpx.TimeoutException as e:
         logger.error(f"LiteLLM request timeout: {e}")
