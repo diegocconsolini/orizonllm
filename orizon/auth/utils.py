@@ -21,6 +21,13 @@ logger = logging.getLogger(__name__)
 LITELLM_BASE_URL = os.getenv("LITELLM_BASE_URL", "http://localhost:4000")
 LITELLM_MASTER_KEY = os.getenv("LITELLM_MASTER_KEY", "")
 
+# Validate required configuration
+if not LITELLM_MASTER_KEY:
+    logger.error("LITELLM_MASTER_KEY environment variable is required but not set!")
+    raise RuntimeError(
+        "LITELLM_MASTER_KEY must be set. Check your .env file or environment variables."
+    )
+
 
 def get_user_email(request: Request) -> Optional[str]:
     """Extract email from oauth2-proxy headers.

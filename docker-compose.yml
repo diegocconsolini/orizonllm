@@ -31,7 +31,7 @@ services:
     ports:
       - "6390:6379"  # Host:Container - using 6390 to avoid conflicts
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 3s
       retries: 5

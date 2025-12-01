@@ -18,6 +18,57 @@ logger = logging.getLogger(__name__)
 LITELLM_BASE_URL = os.getenv("LITELLM_BASE_URL", "http://localhost:4000")
 PROXY_TIMEOUT = int(os.getenv("PROXY_TIMEOUT", "300"))  # 5 minutes for streaming
 
+# Connection pool configuration
+MAX_CONNECTIONS = int(os.getenv("PROXY_MAX_CONNECTIONS", "100"))
+MAX_KEEPALIVE_CONNECTIONS = int(os.getenv("PROXY_MAX_KEEPALIVE", "20"))
+
+# Module-level HTTP client with connection pooling
+_http_client: Optional[httpx.AsyncClient] = None
+
+
+def get_http_client() -> httpx.AsyncClient:
+    """Get or create the shared HTTP client with connection pooling.
+
+    This uses a singleton pattern to ensure we reuse connections.
+    Connection pool limits:
+    - max_connections: Total concurrent connections
+    - max_keepalive_connections: Idle connections kept open
+
+    Returns:
+        Configured httpx.AsyncClient instance
+    """
+    global _http_client
+
+    if _http_client is None:
+        # Create client with connection pooling
+        limits = httpx.Limits(
+            max_connections=MAX_CONNECTIONS,
+            max_keepalive_connections=MAX_KEEPALIVE_CONNECTIONS,
+        )
+
+        _http_client = httpx.AsyncClient(
+            timeout=PROXY_TIMEOUT,
+            limits=limits,
+            http2=True,  # Enable HTTP/2 for better performance
+        )
+
+        logger.info(
+            f"Created HTTP client pool: {MAX_CONNECTIONS} max, "
+            f"{MAX_KEEPALIVE_CONNECTIONS} keepalive"
+        )
+
+    return _http_client
+
+
+async def close_http_client():
+    """Close the shared HTTP client and clean up connections."""
+    global _http_client
+
+    if _http_client is not None:
+        await _http_client.aclose()
+        _http_client = None
+        logger.info("Closed HTTP client pool")
+
 
 async def forward_request(
     request: Request,
