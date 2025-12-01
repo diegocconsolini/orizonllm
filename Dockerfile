@@ -51,7 +51,8 @@ FROM $LITELLM_RUNTIME_IMAGE AS runtime
 USER root
 
 # Install runtime dependencies
-RUN apk add --no-cache openssl tzdata nodejs npm
+# bash: Required for install scripts
+RUN apk add --no-cache openssl tzdata nodejs npm bash
 
 # Upgrade pip to fix CVE-2025-8869
 RUN pip install --upgrade pip>=24.3.1
