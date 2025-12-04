@@ -7,6 +7,8 @@ Handles GitHub OAuth authentication flow:
 3. Exchange code for access token
 4. Fetch user info from GitHub
 5. Create/update user and session
+
+OAuth state is stored in Redis for CSRF protection.
 """
 
 import logging
@@ -16,8 +18,19 @@ from typing import Optional
 from urllib.parse import urlencode
 
 import httpx
+import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
+
+# Redis configuration for OAuth state
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}")
+
+# OAuth state prefix and expiry
+OAUTH_STATE_PREFIX = "orizon:oauth_state:"
+OAUTH_STATE_EXPIRY_SECONDS = 600  # 10 minutes
 
 # GitHub OAuth configuration
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
@@ -40,6 +53,64 @@ OAUTH_STATE_LENGTH = 32
 def generate_oauth_state() -> str:
     """Generate a random state for CSRF protection."""
     return secrets.token_urlsafe(OAUTH_STATE_LENGTH)
+
+
+async def _get_redis_client() -> redis.Redis:
+    """Get Redis client for OAuth state storage."""
+    return redis.from_url(
+        REDIS_URL,
+        password=REDIS_PASSWORD if REDIS_PASSWORD else None,
+        decode_responses=True,
+    )
+
+
+async def store_oauth_state(state: str) -> bool:
+    """Store OAuth state in Redis.
+
+    Args:
+        state: Random state string to store
+
+    Returns:
+        True if stored successfully, False otherwise
+    """
+    try:
+        client = await _get_redis_client()
+        key = f"{OAUTH_STATE_PREFIX}{state}"
+        await client.setex(key, OAUTH_STATE_EXPIRY_SECONDS, "1")
+        await client.aclose()
+        logger.debug(f"Stored OAuth state: {state[:8]}...")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to store OAuth state: {e}")
+        return False
+
+
+async def verify_oauth_state(state: str) -> bool:
+    """Verify and consume OAuth state from Redis.
+
+    Args:
+        state: State string to verify
+
+    Returns:
+        True if valid, False otherwise
+    """
+    try:
+        client = await _get_redis_client()
+        key = f"{OAUTH_STATE_PREFIX}{state}"
+
+        # Get and delete in one operation (atomic)
+        exists = await client.delete(key)
+        await client.aclose()
+
+        if exists:
+            logger.debug(f"Verified OAuth state: {state[:8]}...")
+            return True
+        else:
+            logger.warning(f"Invalid or expired OAuth state: {state[:8]}...")
+            return False
+    except Exception as e:
+        logger.error(f"Failed to verify OAuth state: {e}")
+        return False
 
 
 def get_github_authorize_url(state: str) -> str:

@@ -23,7 +23,7 @@ from .utils import generate_user_id, get_or_create_user_key, get_user
 from .tokens import create_magic_link_token, verify_magic_link_token
 from .email import send_magic_link_email
 from .sessions import create_session, set_session_cookie, delete_session, clear_session_cookie, get_session_cookie, get_current_session
-from .oauth import generate_oauth_state, get_github_authorize_url, complete_github_auth
+from .oauth import generate_oauth_state, get_github_authorize_url, complete_github_auth, store_oauth_state, verify_oauth_state
 from .ratelimit import rate_limit, rate_limit_by_email
 
 logger = logging.getLogger(__name__)
@@ -294,23 +294,27 @@ async def logout(request: Request, response: Response):
     return {"success": True, "message": "Logged out successfully"}
 
 
-# OAuth state storage (in-memory for simplicity, use Redis in production)
-_oauth_states: dict[str, bool] = {}
-
-
 @router.get("/github")
 async def github_auth(request: Request, response: Response):
     """Start GitHub OAuth flow.
 
     Redirects user to GitHub authorization page.
     Rate limited: 10 OAuth attempts per minute per IP.
+    OAuth state is stored in Redis for CSRF protection.
     """
     # Apply rate limiting
     await rate_limit(request, "oauth")
 
     # Generate state for CSRF protection
     state = generate_oauth_state()
-    _oauth_states[state] = True
+
+    # Store state in Redis (expires in 10 minutes)
+    stored = await store_oauth_state(state)
+    if not stored:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to initialize OAuth flow",
+        )
 
     # Get authorization URL
     auth_url = get_github_authorize_url(state)
@@ -350,13 +354,13 @@ async def github_callback(
             detail="Missing authorization code or state",
         )
 
-    # Verify state (CSRF protection)
-    if state not in _oauth_states:
+    # Verify state (CSRF protection) - checks Redis and deletes atomically
+    valid = await verify_oauth_state(state)
+    if not valid:
         raise HTTPException(
             status_code=400,
-            detail="Invalid OAuth state",
+            detail="Invalid or expired OAuth state",
         )
-    del _oauth_states[state]
 
     # Complete GitHub auth flow
     github_user = await complete_github_auth(code)
