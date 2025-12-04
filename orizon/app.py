@@ -8,17 +8,22 @@ import logging
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
+
+# CORS configuration from environment
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 
 
 def setup_orizon(app: FastAPI) -> None:
     """Setup Orizon modules on the LiteLLM FastAPI application.
 
     This function:
-    1. Mounts authentication middleware
-    2. Registers auth API routes
-    3. Registers proxy routes
+    1. Mounts CORS middleware
+    2. Mounts authentication middleware
+    3. Registers auth API routes
     4. Registers portal routes
     5. Mounts static files
 
@@ -32,12 +37,24 @@ def setup_orizon(app: FastAPI) -> None:
     from orizon.auth import routes as auth_routes
     from orizon.portal import routes as portal_routes
 
-    # 1. Mount authentication middleware
+    # 1. Mount CORS middleware
+    # This must be added before other middleware
+    logger.info(f"  ↳ Mounting CORS middleware (origins: {CORS_ORIGINS})...")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_credentials=CORS_ALLOW_CREDENTIALS,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_headers=["*"],
+        expose_headers=["X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
+    )
+
+    # 2. Mount authentication middleware
     # This injects Authorization headers for authenticated users
     logger.info("  ↳ Mounting auth middleware...")
     app.add_middleware(OrizonAuthMiddleware)
 
-    # 2. Register auth routes (/api/auth/*)
+    # 3. Register auth routes (/api/auth/*)
     logger.info("  ↳ Registering auth routes...")
     app.include_router(auth_routes.router)
 

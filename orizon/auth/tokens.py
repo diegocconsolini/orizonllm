@@ -16,8 +16,11 @@ import redis.asyncio as redis
 logger = logging.getLogger(__name__)
 
 # Redis configuration
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+# Build URL from individual components for consistency with other modules
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+REDIS_URL = os.getenv("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}")
 
 # Token configuration
 TOKEN_PREFIX = "orizon:magic:"
