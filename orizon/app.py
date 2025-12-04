@@ -30,10 +30,10 @@ def setup_orizon(app: FastAPI) -> None:
     # Import modules
     from orizon.auth.middleware import OrizonAuthMiddleware
     from orizon.auth import routes as auth_routes
-    from orizon.proxy import router as proxy_router
     from orizon.portal import routes as portal_routes
 
     # 1. Mount authentication middleware
+    # This injects Authorization headers for authenticated users
     logger.info("  ↳ Mounting auth middleware...")
     app.add_middleware(OrizonAuthMiddleware)
 
@@ -41,15 +41,19 @@ def setup_orizon(app: FastAPI) -> None:
     logger.info("  ↳ Registering auth routes...")
     app.include_router(auth_routes.router)
 
-    # 3. Register proxy routes (/v1/*, /models)
-    logger.info("  ↳ Registering proxy routes...")
-    app.include_router(proxy_router)
+    # NOTE: Proxy routes (/v1/*, /models) are NOT registered in integrated mode.
+    # When running inside LiteLLM, LiteLLM's native routes handle /v1/* requests.
+    # The auth middleware injects the Authorization header, which LiteLLM validates.
+    #
+    # For standalone proxy mode (Orizon in front of LiteLLM), use:
+    #   from orizon.proxy import router as proxy_router
+    #   app.include_router(proxy_router)
 
-    # 4. Register portal routes (/signup, /login, /profile)
+    # 3. Register portal routes (/signup, /login, /profile)
     logger.info("  ↳ Registering portal routes...")
     app.include_router(portal_routes.router)
 
-    # 5. Mount static files (/static)
+    # 4. Mount static files (/static)
     logger.info("  ↳ Mounting static files...")
     portal_routes.setup_static_files(app)
 
