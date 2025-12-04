@@ -73,6 +73,11 @@ services:
       # GitHub OAuth (optional - for portal login)
       GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
       GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-}
+
+      # Azure Key Vault (optional - for production secrets management)
+      # Set USE_AZURE_KEY_VAULT=true to load secrets from Azure KV
+      USE_AZURE_KEY_VAULT: ${USE_AZURE_KEY_VAULT:-false}
+      AZURE_KEY_VAULT_URI: ${AZURE_KEY_VAULT_URI:-}
     depends_on:
       postgres:
         condition: service_healthy
