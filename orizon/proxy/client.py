@@ -49,7 +49,7 @@ def get_http_client() -> httpx.AsyncClient:
         _http_client = httpx.AsyncClient(
             timeout=PROXY_TIMEOUT,
             limits=limits,
-            http2=True,  # Enable HTTP/2 for better performance
+            # http2=True,  # Disabled - requires h2 package
         )
 
         logger.info(
