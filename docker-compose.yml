@@ -50,6 +50,7 @@ services:
     restart: unless-stopped
     ports:
       - "4010:4000"  # Host:Container - using 4010 to avoid conflicts
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
       # Database
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/orizon
