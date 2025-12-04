@@ -18,7 +18,7 @@ class TestBuildCSPHeader:
 
     def test_build_strict_csp(self):
         """Should build strict CSP for web pages."""
-        csp = build_csp_header(strict=True)
+        csp = build_csp_header(mode="strict")
 
         # Should contain key directives
         assert "default-src" in csp
@@ -27,7 +27,7 @@ class TestBuildCSPHeader:
 
     def test_build_relaxed_csp(self):
         """Should build minimal CSP for API endpoints."""
-        csp = build_csp_header(strict=False)
+        csp = build_csp_header(mode="relaxed")
 
         # Should be minimal
         assert csp == "default-src 'none'; frame-ancestors 'none'"
