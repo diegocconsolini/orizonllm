@@ -50,20 +50,41 @@ CSP_RELAXED_PATHS = [
     "/metrics",
 ]
 
+# Paths that need permissive CSP for UI frameworks (React, Next.js)
+CSP_UI_PATHS = [
+    "/ui",  # LiteLLM Admin Dashboard (Next.js)
+    "/",    # Swagger UI
+    "/docs",
+]
 
-def build_csp_header(strict: bool = True) -> str:
+
+def build_csp_header(mode: str = "strict") -> str:
     """Build Content-Security-Policy header value.
 
     Args:
-        strict: If True, use strict CSP. If False, use relaxed CSP for APIs.
+        mode: CSP mode - "strict", "relaxed" (API), or "ui" (permissive for frameworks)
 
     Returns:
         CSP header value
     """
-    if not strict:
-        # Relaxed CSP for API endpoints
+    if mode == "relaxed":
+        # Minimal CSP for API endpoints
         return "default-src 'none'; frame-ancestors 'none'"
 
+    if mode == "ui":
+        # Permissive CSP for UI frameworks (React, Next.js, Swagger)
+        # These frameworks often need inline scripts and eval
+        return (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https: blob:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https:; "
+            "frame-ancestors 'none'"
+        )
+
+    # Strict CSP for Orizon pages
     directives = []
     for directive, value in CSP_DIRECTIVES.items():
         if value:
@@ -90,11 +111,19 @@ def get_security_headers(
     if not SECURITY_HEADERS_ENABLED:
         return headers
 
-    # Determine if we should use strict or relaxed CSP
+    # Determine CSP mode based on path
     is_api_path = any(request_path.startswith(path) for path in CSP_RELAXED_PATHS)
+    is_ui_path = any(request_path.startswith(path) for path in CSP_UI_PATHS)
 
     # Content-Security-Policy
-    headers["Content-Security-Policy"] = build_csp_header(strict=not is_api_path)
+    if is_api_path:
+        csp_mode = "relaxed"
+    elif is_ui_path:
+        csp_mode = "ui"
+    else:
+        csp_mode = "strict"
+
+    headers["Content-Security-Policy"] = build_csp_header(mode=csp_mode)
 
     # X-Content-Type-Options - prevents MIME type sniffing
     headers["X-Content-Type-Options"] = "nosniff"
