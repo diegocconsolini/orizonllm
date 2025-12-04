@@ -183,14 +183,11 @@ async def get_user_virtual_key_from_request(request: Request) -> Optional[str]:
     Returns:
         Virtual key if authenticated, None otherwise
     """
-    # Check if middleware already set this (internal user)
-    if hasattr(request.state, "orizon_user"):
-        user = request.state.orizon_user
-        # Extract virtual key from user data
-        if "keys" in user and user["keys"]:
-            return user["keys"][0].get("key")
+    # Check if middleware already set the virtual key (internal user via oauth2-proxy)
+    if hasattr(request.state, "orizon_virtual_key"):
+        return request.state.orizon_virtual_key
 
-    # Check session cookie (external user)
+    # Check session cookie (external user via portal login)
     from orizon.auth.sessions import get_current_session
 
     session = await get_current_session(request)
