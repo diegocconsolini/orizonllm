@@ -10,6 +10,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
+from orizon.security import setup_security_middleware
+
 logger = logging.getLogger(__name__)
 
 # CORS configuration from environment
@@ -49,7 +51,12 @@ def setup_orizon(app: FastAPI) -> None:
         expose_headers=["X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
     )
 
-    # 2. Mount authentication middleware
+    # 2. Mount security headers middleware
+    # Adds CSP, HSTS, and other security headers
+    logger.info("  ↳ Mounting security headers middleware...")
+    setup_security_middleware(app)
+
+    # 3. Mount authentication middleware
     # This injects Authorization headers for authenticated users
     logger.info("  ↳ Mounting auth middleware...")
     app.add_middleware(OrizonAuthMiddleware)
