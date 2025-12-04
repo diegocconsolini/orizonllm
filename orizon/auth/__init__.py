@@ -10,6 +10,7 @@ Components:
 - email.py: Email service for magic link
 - oauth.py: GitHub OAuth integration
 - routes.py: Auth API endpoints
+- ratelimit.py: Redis-based rate limiting for auth endpoints
 """
 
 from .utils import (
@@ -19,6 +20,7 @@ from .utils import (
     get_or_create_user_key,
     generate_user_id,
 )
+from .ratelimit import rate_limit, rate_limit_by_email, close_redis
 
 __all__ = [
     "get_user_email",
@@ -26,4 +28,7 @@ __all__ = [
     "get_or_create_user",
     "get_or_create_user_key",
     "generate_user_id",
+    "rate_limit",
+    "rate_limit_by_email",
+    "close_redis",
 ]

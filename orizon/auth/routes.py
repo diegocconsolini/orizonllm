@@ -7,6 +7,8 @@ Handles external user authentication:
 - GET /api/auth/verify - Verify magic link token
 - GET /api/auth/github - GitHub OAuth redirect
 - GET /api/auth/github/callback - GitHub OAuth callback
+
+All authentication endpoints are rate-limited to prevent brute force attacks.
 """
 
 import logging
@@ -22,6 +24,7 @@ from .tokens import create_magic_link_token, verify_magic_link_token
 from .email import send_magic_link_email
 from .sessions import create_session, set_session_cookie, delete_session, clear_session_cookie, get_session_cookie, get_current_session
 from .oauth import generate_oauth_state, get_github_authorize_url, complete_github_auth
+from .ratelimit import rate_limit, rate_limit_by_email
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +105,11 @@ async def signup(request: Request, body: SignupRequest):
     """Handle new user signup.
 
     Creates user in LiteLLM and sends magic link email.
+    Rate limited: 3 signups per 5 minutes per IP, plus per-email limits.
     """
+    # Apply rate limiting
+    await rate_limit_by_email(request, body.email, "signup")
+
     logger.info(f"Signup request for: {body.email}")
 
     try:
@@ -159,7 +166,11 @@ async def login(request: Request, body: LoginRequest):
     """Handle user login.
 
     Sends magic link email to existing user.
+    Rate limited: 5 login attempts per minute per IP, plus per-email limits.
     """
+    # Apply rate limiting
+    await rate_limit_by_email(request, body.email, "login")
+
     logger.info(f"Login request for: {body.email}")
 
     try:
@@ -205,11 +216,15 @@ async def login(request: Request, body: LoginRequest):
 
 
 @router.get("/verify")
-async def verify_token(token: str, response: Response):
+async def verify_token(request: Request, token: str, response: Response):
     """Verify magic link token and create session.
 
     This is called when user clicks the magic link.
+    Rate limited: 3 attempts per minute per IP.
     """
+    # Apply rate limiting
+    await rate_limit(request, "magic_link")
+
     logger.info("Verifying magic link token")
 
     try:
@@ -284,11 +299,15 @@ _oauth_states: dict[str, bool] = {}
 
 
 @router.get("/github")
-async def github_auth(response: Response):
+async def github_auth(request: Request, response: Response):
     """Start GitHub OAuth flow.
 
     Redirects user to GitHub authorization page.
+    Rate limited: 10 OAuth attempts per minute per IP.
     """
+    # Apply rate limiting
+    await rate_limit(request, "oauth")
+
     # Generate state for CSRF protection
     state = generate_oauth_state()
     _oauth_states[state] = True
@@ -304,6 +323,7 @@ async def github_auth(response: Response):
 
 @router.get("/github/callback")
 async def github_callback(
+    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
@@ -312,7 +332,11 @@ async def github_callback(
     """Handle GitHub OAuth callback.
 
     Exchanges code for token and creates session.
+    Rate limited: 10 OAuth attempts per minute per IP.
     """
+    # Apply rate limiting
+    await rate_limit(request, "oauth")
+
     # Check for OAuth errors
     if error:
         raise HTTPException(
