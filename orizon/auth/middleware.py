@@ -72,6 +72,7 @@ class OrizonAuthMiddleware(BaseHTTPMiddleware):
                     # Store user info in request state for downstream access
                     request.state.orizon_user = user_data
                     request.state.orizon_email = user_email
+                    request.state.orizon_virtual_key = virtual_key  # Store actual key
 
                     logger.info(f"Injected auth for user: {user_email}")
                 else:
