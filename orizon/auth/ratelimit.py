@@ -158,6 +158,14 @@ async def rate_limit(
     request.state.ratelimit_reset = reset_seconds
 
     if not allowed:
+        # Record rate limit hit in metrics
+        try:
+            from orizon.metrics import record_rate_limit_hit
+            endpoint = request.url.path
+            record_rate_limit_hit(endpoint, action)
+        except ImportError:
+            pass  # Metrics module not available
+
         raise HTTPException(
             status_code=429,
             detail={
