@@ -1,9 +1,11 @@
 {
-  "brand": {
-    "DEFAULT": "#6366f1",
-    "muted": "#8688ef",
-    "subtle": "#8e91eb",
-    "emphasis": "#5558eb",
-    "inverted": "indigo"
+    "brand": {
+      "DEFAULT": "teal",
+      "faint": "teal",
+      "muted": "teal",
+      "subtle": "teal",
+      "emphasis": "teal",
+      "inverted": "teal"
+    }
   }
-}
+  
