@@ -1,5 +1,5 @@
-# Orizon - Docker Compose Configuration
-# Local development environment
+# OrizonLLM - Docker Compose Configuration
+# Enterprise LLM Gateway - All Features Unlocked
 # Ports: postgres:5442, redis:6390, orizon:4010 (to avoid conflicts)
 
 services:
@@ -60,7 +60,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_PORT: 6379
 
-      # LiteLLM
+      # OrizonLLM (uses LITELLM_* names for compatibility)
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY}
       STORE_MODEL_IN_DB: "True"

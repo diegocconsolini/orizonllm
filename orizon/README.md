@@ -1,6 +1,6 @@
-# Orizon - Module Structure
+# OrizonLLM - Custom Extensions Module
 
-This directory contains all Orizon-specific code extensions to LiteLLM.
+This directory contains all OrizonLLM-specific code extensions that enhance the base LiteLLM proxy with enterprise features.
 
 ## Directory Structure
 
@@ -38,14 +38,14 @@ orizon/
 
 ## Design Principles
 
-1. **Extend, Don't Replace:** Orizon extends LiteLLM, doesn't replace it
+1. **Extend, Don't Replace:** OrizonLLM extends the base LiteLLM proxy, doesn't replace it
 2. **Hybrid Schema:** New features = new tables, extensions = modify existing
 3. **Environment-Driven:** All configuration via environment variables
-4. **Test Coverage:** 80%+ coverage required for all Orizon code
+4. **Test Coverage:** 80%+ coverage required for all OrizonLLM custom code
 
 ## Development
 
-All Orizon modules are mounted read-only into the Docker container during development:
+All OrizonLLM modules are mounted read-only into the Docker container during development:
 
 ```yaml
 volumes:
@@ -59,7 +59,7 @@ Changes to code require container restart to take effect.
 Tests are located in `/tests/orizon/` mirroring this structure:
 
 ```bash
-# Run all Orizon tests
+# Run all OrizonLLM tests
 docker-compose -f docker-compose.test.yml up
 
 # Run specific module tests
