@@ -30,8 +30,8 @@ Orizon is a **customized fork of LiteLLM** with:
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/orizon-repo.git
-cd orizon-repo
+git clone https://github.com/diegocconsolini/orizonllm.git
+cd orizonllm
 
 # Copy environment template
 cp .env.example .env
@@ -211,10 +211,33 @@ docker logs -f orizon-proxy
 └─────────────────────────────────────────────┘
 ```
 
-## Credits
+## Technical Details
 
-Based on [LiteLLM](https://github.com/BerriAI/litellm) by BerriAI.
+### Enterprise Unlock
+
+The enterprise license check is bypassed in `litellm/proxy/auth/litellm_license.py`:
+
+```python
+def is_premium(self) -> bool:
+    """ORIZON: Enterprise features unlocked."""
+    return True
+```
+
+### Key File Locations
+
+| File | Purpose |
+|------|---------|
+| `litellm/proxy/auth/litellm_license.py` | Enterprise unlock |
+| `orizon/security.py` | CSP headers, HSTS |
+| `orizon/auth/` | GitHub OAuth, magic link |
+| `config.yaml` | Model configuration |
+
+## Repository
+
+- **URL**: https://github.com/diegocconsolini/orizonllm
+- **Private**: Yes
+- **Standalone**: Disconnected from upstream LiteLLM
 
 ---
 
-**Note:** This is a private fork with enterprise features unlocked for internal use.
+**Note:** This is a private, standalone fork with enterprise features unlocked. Not affiliated with BerriAI.
