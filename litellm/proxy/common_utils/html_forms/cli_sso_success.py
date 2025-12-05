@@ -14,7 +14,7 @@ def render_cli_sso_success_page() -> str:
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>CLI Authentication Successful - LiteLLM</title>
+        <title>CLI Authentication Successful - OrizonLLM</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {{
@@ -150,7 +150,7 @@ def render_cli_sso_success_page() -> str:
         <div class="container">
             <div class="logo-container">
                 <div class="logo">
-                    🚅 LiteLLM
+                    🚀 OrizonLLM
                 </div>
             </div>
             
@@ -167,7 +167,7 @@ def render_cli_sso_success_page() -> str:
                     </svg>
                     CLI Authentication Complete
                 </div>
-                <p>Your LiteLLM CLI has been successfully authenticated and is ready to use.</p>
+                <p>Your OrizonLLM CLI has been successfully authenticated and is ready to use.</p>
             </div>
             
             <div class="instructions">
@@ -180,7 +180,7 @@ def render_cli_sso_success_page() -> str:
                     Next Steps
                 </div>
                 <p>Return to your terminal - the CLI will automatically detect the successful authentication.</p>
-                <p>You can now use LiteLLM CLI commands with your authenticated session.</p>
+                <p>You can now use OrizonLLM CLI commands with your authenticated session.</p>
             </div>
             
             <div class="countdown" id="countdown">This window will close in 3 seconds...</div>
