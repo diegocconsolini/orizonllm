@@ -124,7 +124,7 @@ case $REPLY in
 
         # Add upstream if needed
         if ! git remote | grep -q "^upstream$"; then
-            git remote add upstream https://github.com/BerriAI/litellm.git
+            git remote add upstream git@github.com:BerriAI/litellm.git
         fi
 
         git fetch upstream --quiet

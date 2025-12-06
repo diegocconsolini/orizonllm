@@ -235,17 +235,21 @@ See [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) for full details.
 
 ## Container Registry
 
-### Setup GitHub Container Registry (One-time)
+### Setup (One-time)
 
 ```bash
-# 1. Create a GitHub Personal Access Token
+# 1. Configure SSH for GitHub (if not already done)
+# Your SSH key should be added to GitHub → Settings → SSH Keys
+ssh -T git@github.com  # Test: should say "Hi username!"
+
+# 2. Create a GitHub Personal Access Token for Container Registry
 # Go to: GitHub → Settings → Developer Settings → Personal Access Tokens
 # Permissions: write:packages, read:packages, delete:packages
 
-# 2. Login to registry
+# 3. Login to container registry
 echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
 
-# 3. Configure the build script
+# 4. Configure the build script
 export GHCR_USERNAME=your-github-username
 export REGISTRY_TYPE=ghcr
 ```
