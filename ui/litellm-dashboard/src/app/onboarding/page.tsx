@@ -92,7 +92,7 @@ export default function Onboarding() {
   return (
     <div className="mx-auto w-full max-w-md mt-10">
       <Card>
-        <Title className="text-sm mb-5 text-center">🚀 OrizonLLM</Title>
+        <Title className="text-sm mb-5 text-center">OrizonLLM</Title>
         <Title className="text-xl">{action === "reset_password" ? "Reset Password" : "Sign up"}</Title>
         <Text>
           {action === "reset_password"

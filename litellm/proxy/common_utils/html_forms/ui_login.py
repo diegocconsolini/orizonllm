@@ -191,7 +191,7 @@ html_form = f"""
     <form action="{url_to_redirect_to}" method="post">
         <div class="logo-container">
             <div class="logo">
-                🚀 OrizonLLM
+                OrizonLLM
             </div>
         </div>
         <h2>Login</h2>

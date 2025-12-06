@@ -150,7 +150,7 @@ def render_cli_sso_success_page() -> str:
         <div class="container">
             <div class="logo-container">
                 <div class="logo">
-                    🚀 OrizonLLM
+                    OrizonLLM
                 </div>
             </div>
             
