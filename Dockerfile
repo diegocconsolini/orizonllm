@@ -52,7 +52,7 @@ USER root
 
 # Install runtime dependencies
 # bash: Required for install scripts
-RUN apk add --no-cache openssl tzdata nodejs npm bash
+RUN apk add --no-cache openssl tzdata nodejs npm bash libsndfile ffmpeg
 
 # Upgrade pip to fix CVE-2025-8869
 RUN pip install --upgrade pip>=24.3.1
