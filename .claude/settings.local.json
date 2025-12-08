@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git merge-base:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rev-list:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
