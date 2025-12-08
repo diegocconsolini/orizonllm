@@ -11,8 +11,9 @@
 
 Update your OrizonLLM fork with upstream LiteLLM changes while:
 1. Preserving your modifications (rebranding, custom features)
-2. Maintaining no direct runtime dependency on upstream
-3. Being able to repeat this process for future updates
+2. **Preserving the license bypass** (enterprise features unlocked)
+3. Maintaining no direct runtime dependency on upstream
+4. Being able to repeat this process for future updates
 
 ---
 
@@ -75,10 +76,49 @@ git status
 
 ### Phase 4: Conflict Resolution Strategy
 
+#### CRITICAL: Files to ALWAYS keep YOUR version (--ours)
+
+These files contain your customizations and MUST be preserved:
+
+```bash
+# License bypass - CRITICAL: keeps enterprise features unlocked
+git checkout --ours litellm/proxy/auth/litellm_license.py
+git add litellm/proxy/auth/litellm_license.py
+
+# Branding files
+git checkout --ours README.md
+git checkout --ours CLAUDE.md
+git add README.md CLAUDE.md
+```
+
+**Your license bypass** (`litellm/proxy/auth/litellm_license.py`):
+```python
+def is_premium(self) -> bool:
+    """
+    ORIZON: Enterprise features unlocked.
+    All premium features are enabled without license validation.
+    """
+    return True
+```
+
+This bypasses the license check to `https://license.litellm.ai` and enables:
+- Tag Budgets
+- Audit Logs
+- Custom Email Branding
+- Allowed Routes per key
+- Max Request Size limits
+- Callback Controls via headers
+- Secret Manager integrations (Google/AWS/HashiCorp)
+- SSO features
+
+---
+
 **Files likely to conflict (prioritize YOUR version):**
+- `litellm/proxy/auth/litellm_license.py` - **ALWAYS KEEP YOURS** (license bypass)
 - `README.md` - Keep your OrizonLLM branding
 - `pyproject.toml` - Keep your package name, merge dependency updates
 - `litellm/_version.py` - Keep your versioning scheme
+- `CLAUDE.md` - Keep yours
 - Any files with "OrizonLLM" branding
 
 **Files likely to conflict (prioritize UPSTREAM version):**
@@ -96,6 +136,19 @@ git checkout --theirs path/to/file
 
 # Manual merge (open in editor)
 code path/to/conflicting/file
+```
+
+#### Quick Resolution Script
+
+Run this after `git merge upstream/main --no-commit` to auto-resolve critical files:
+
+```bash
+# Auto-resolve files that MUST keep your version
+git checkout --ours litellm/proxy/auth/litellm_license.py 2>/dev/null && git add litellm/proxy/auth/litellm_license.py
+git checkout --ours README.md 2>/dev/null && git add README.md
+git checkout --ours CLAUDE.md 2>/dev/null && git add CLAUDE.md
+
+echo "Critical files resolved. Review remaining conflicts with: git status"
 ```
 
 ### Phase 5: Testing
@@ -160,6 +213,13 @@ DATE=$(date +%Y%m%d)
 BACKUP_BRANCH="backup-before-sync-$DATE"
 UPDATE_BRANCH="update/upstream-sync-$DATE"
 
+# Files that MUST always keep our version (license bypass, branding)
+PROTECTED_FILES=(
+    "litellm/proxy/auth/litellm_license.py"
+    "README.md"
+    "CLAUDE.md"
+)
+
 echo "=== OrizonLLM Upstream Sync ==="
 
 # Ensure we're on main
@@ -192,21 +252,172 @@ git checkout -b $UPDATE_BRANCH
 
 # Attempt merge
 echo "Attempting merge..."
-if git merge upstream/main --no-commit; then
-    echo "Merge successful with no conflicts!"
-else
+git merge upstream/main --no-commit || true
+
+# Auto-resolve protected files (keep ours)
+echo ""
+echo "=== Auto-resolving protected files (keeping ours) ==="
+for file in "${PROTECTED_FILES[@]}"; do
+    if git ls-files -u | grep -q "$file"; then
+        echo "  Keeping ours: $file"
+        git checkout --ours "$file" 2>/dev/null && git add "$file"
+    fi
+done
+
+# Check for remaining conflicts
+if git ls-files -u | grep -v -E "$(IFS=\|; echo "${PROTECTED_FILES[*]}")" | grep -q .; then
     echo ""
-    echo "=== CONFLICTS DETECTED ==="
-    echo "Resolve conflicts, then run:"
+    echo "=== REMAINING CONFLICTS ==="
+    git ls-files -u | cut -f2 | sort -u
+    echo ""
+    echo "Resolve remaining conflicts, then run:"
     echo "  git add ."
     echo "  git commit -m 'chore: sync with upstream LiteLLM'"
     echo "  git checkout main && git merge $UPDATE_BRANCH"
-    exit 1
+else
+    echo ""
+    echo "All conflicts resolved!"
+    echo "Review changes with: git diff --staged"
+    echo "Commit with: git commit -m 'chore: sync with upstream LiteLLM'"
+fi
+```
+
+---
+
+## License Check Monitoring
+
+### Files That Reference the License System
+
+These files contain `premium_user`, `is_premium`, `LicenseCheck`, or license validation logic.
+**Monitor these for new license checks when upstream updates:**
+
+#### Core License Files (72 total files reference licensing)
+
+**Main license implementation:**
+- `litellm/proxy/auth/litellm_license.py` - **YOUR BYPASS IS HERE**
+
+**Files that CHECK license status (import premium_user or call is_premium):**
+```
+litellm/proxy/proxy_server.py
+litellm/proxy/utils.py
+litellm/proxy/auth/auth_utils.py
+litellm/proxy/auth/route_checks.py
+litellm/proxy/auth/user_api_key_auth.py
+litellm/proxy/auth/oauth2_check.py
+litellm/proxy/litellm_pre_call_utils.py
+litellm/proxy/common_utils/callback_utils.py
+litellm/proxy/guardrails/init_guardrails.py
+litellm/proxy/hooks/dynamic_rate_limiter.py
+litellm/proxy/hooks/dynamic_rate_limiter_v3.py
+litellm/proxy/health_endpoints/_health_endpoints.py
+litellm/proxy/fine_tuning_endpoints/endpoints.py
+litellm/proxy/pass_through_endpoints/pass_through_endpoints.py
+litellm/proxy/spend_tracking/spend_management_endpoints.py
+litellm/proxy/management_endpoints/key_management_endpoints.py
+litellm/proxy/management_endpoints/team_endpoints.py
+litellm/proxy/management_endpoints/model_management_endpoints.py
+litellm/proxy/management_endpoints/ui_sso.py
+litellm/proxy/management_endpoints/common_utils.py
+litellm/proxy/management_endpoints/scim/scim_v2.py
+litellm/proxy/management_helpers/audit_logs.py
+litellm/router_strategy/budget_limiter.py
+litellm/secret_managers/google_secret_manager.py
+litellm/secret_managers/aws_secret_manager.py
+litellm/secret_managers/cyberark_secret_manager.py
+litellm/secret_managers/hashicorp_secret_manager.py
+litellm/integrations/gcs_bucket/gcs_bucket.py
+litellm/integrations/gcs_pubsub/pub_sub.py
+litellm/integrations/custom_guardrail.py
+litellm/integrations/email_alerting.py
+litellm/integrations/azure_storage/azure_storage.py
+litellm/integrations/SlackAlerting/slack_alerting.py
+enterprise/litellm_enterprise/proxy/proxy_server.py
+enterprise/litellm_enterprise/proxy/utils.py
+enterprise/litellm_enterprise/proxy/auth/route_checks.py
+enterprise/litellm_enterprise/proxy/auth/custom_sso_handler.py
+enterprise/litellm_enterprise/proxy/management_endpoints/internal_user_endpoints.py
+enterprise/litellm_enterprise/enterprise_callbacks/callback_controls.py
+enterprise/litellm_enterprise/enterprise_callbacks/send_emails/base_email.py
+enterprise/litellm_enterprise/integrations/custom_guardrail.py
+```
+
+### Script: Detect New License Checks
+
+Create `scripts/check-license-changes.sh` to run BEFORE merging:
+
+```bash
+#!/bin/bash
+# Compares license-related files between your branch and upstream
+# Run this BEFORE merging to see if upstream added new license checks
+
+echo "=== License Change Detection ==="
+echo ""
+
+# Fetch upstream first
+git fetch upstream 2>/dev/null
+
+# Files known to contain license checks
+LICENSE_FILES=(
+    "litellm/proxy/auth/litellm_license.py"
+    "litellm/proxy/proxy_server.py"
+    "litellm/proxy/utils.py"
+    "litellm/proxy/auth/auth_utils.py"
+    "litellm/proxy/auth/route_checks.py"
+    "litellm/proxy/litellm_pre_call_utils.py"
+    "litellm/router_strategy/budget_limiter.py"
+    "litellm/proxy/guardrails/init_guardrails.py"
+    "litellm/proxy/management_endpoints/key_management_endpoints.py"
+    "litellm/proxy/management_endpoints/team_endpoints.py"
+)
+
+echo "Checking for license-related changes in upstream..."
+echo ""
+
+CHANGES_FOUND=0
+
+for file in "${LICENSE_FILES[@]}"; do
+    # Check if file changed in upstream
+    if git diff main..upstream/main --name-only | grep -q "^$file$"; then
+        echo ">>> CHANGED: $file"
+
+        # Show specific license-related changes
+        echo "    License-related diffs:"
+        git diff main..upstream/main -- "$file" | grep -E "premium_user|is_premium|LicenseCheck|not_premium_user|Enterprise.*feature" | head -10
+        echo ""
+        CHANGES_FOUND=1
+    fi
+done
+
+# Search for NEW files with license checks
+echo ""
+echo "Searching for NEW license checks in upstream..."
+NEW_LICENSE_REFS=$(git diff main..upstream/main --name-only -- '*.py' | while read f; do
+    git show "upstream/main:$f" 2>/dev/null | grep -l -E "premium_user|is_premium\(\)|LicenseCheck" >/dev/null && echo "$f"
+done)
+
+if [ -n "$NEW_LICENSE_REFS" ]; then
+    echo ">>> Files with potential NEW license checks:"
+    echo "$NEW_LICENSE_REFS"
+    CHANGES_FOUND=1
 fi
 
 echo ""
-echo "Review changes with: git diff --staged"
-echo "Commit with: git commit -m 'chore: sync with upstream LiteLLM'"
+if [ $CHANGES_FOUND -eq 1 ]; then
+    echo "=== ACTION REQUIRED ==="
+    echo "Review the above files for new license checks that may need bypassing."
+    echo "Your current bypass only covers: litellm/proxy/auth/litellm_license.py"
+else
+    echo "=== NO LICENSE CHANGES DETECTED ==="
+    echo "Safe to merge - no new license checks found in upstream."
+fi
+```
+
+### Quick One-Liner Check
+
+Run this before any merge to see license-related changes:
+
+```bash
+git diff main..upstream/main -- '*.py' | grep -E "premium_user|is_premium|LicenseCheck|not_premium_user" | head -30
 ```
 
 ---
@@ -217,6 +428,7 @@ These files are most likely to have conflicts:
 
 | File | Strategy |
 |------|----------|
+| `litellm/proxy/auth/litellm_license.py` | **ALWAYS KEEP YOURS** (license bypass) |
 | `README.md` | Keep yours |
 | `pyproject.toml` | Merge carefully (keep name, update deps) |
 | `CLAUDE.md` | Keep yours |
