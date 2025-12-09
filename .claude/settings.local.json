@@ -9,7 +9,13 @@
       "WebFetch(domain:api.audividi.ai)",
       "Bash(curl:*)",
       "Bash(jq:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(dig:*)",
+      "Bash(for sub in www api app mail admin dev staging test beta portal dashboard)",
+      "Bash(do dig +short $sub.audividi.ai)",
+      "Bash(done)",
+      "Bash(nslookup:*)",
+      "Bash(host:*)"
     ],
     "deny": [],
     "ask": []
