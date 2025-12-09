@@ -101,7 +101,15 @@ def is_premium(self) -> bool:
     return True
 ```
 
-This bypasses the license check to `https://license.litellm.ai` and enables:
+**Upstream's version** does actual validation:
+1. Checks `LITELLM_LICENSE` env var
+2. Verifies against public key (air-gapped)
+3. Falls back to API call to `https://license.litellm.ai`
+4. Returns `False` if no valid license
+
+**Your bypass simply returns `True`** - skipping all validation.
+
+This bypasses the license check and enables:
 - Tag Budgets
 - Audit Logs
 - Custom Email Branding
