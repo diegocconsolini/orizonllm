@@ -130,9 +130,9 @@ const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="w-full">
-        <div className="flex items-center h-14 px-4">
+        <div className="flex items-center h-28 px-4">
           {" "}
-          {/* Increased height from h-12 to h-14 */}
+          {/* Increased height for larger logo */}
           {/* Left side with collapse toggle and logo */}
           <div className="flex items-center flex-shrink-0">
             {/* Collapse/Expand Toggle Button - Larger */}
@@ -147,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({
             )}
 
             <Link href="/" className="flex items-center">
-              <img src={imageUrl} alt="OrizonLLM" className="h-10 w-auto" />
+              <img src={imageUrl} alt="OrizonLLM" className="h-[100px] w-auto" />
             </Link>
           </div>
           {/* Right side nav items */}
