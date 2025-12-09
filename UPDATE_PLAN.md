@@ -461,11 +461,32 @@ git reset --hard origin/main
 
 ---
 
+## Quick Reference Commands
+
+```bash
+# Check for license changes before merging
+./scripts/check-license-changes.sh
+
+# Full sync workflow (recommended)
+./scripts/sync-upstream.sh
+
+# Manual quick sync
+git fetch upstream
+git merge upstream/main --no-commit
+git checkout --ours litellm/proxy/auth/litellm_license.py && git add litellm/proxy/auth/litellm_license.py
+git checkout --ours README.md && git add README.md
+# resolve remaining conflicts...
+git commit -m "chore: sync with upstream LiteLLM"
+```
+
+---
+
 ## Summary
 
 1. **Always backup first** (`git branch backup-...`)
-2. **Use merge, not rebase** for your situation
-3. **Resolve conflicts favoring your branding** in identity files
-4. **Test thoroughly** before merging to main
-5. **Keep the sync script** for future updates
-6. **Upstream remote can be added/removed** as needed - it has no runtime impact
+2. **Run license check** before merging (`./scripts/check-license-changes.sh`)
+3. **Use merge, not rebase** for your situation
+4. **Always keep your version** of `litellm/proxy/auth/litellm_license.py` (license bypass)
+5. **Resolve conflicts favoring your branding** in identity files
+6. **Test thoroughly** before merging to main
+7. **Upstream remote can be added/removed** as needed - it has no runtime impact

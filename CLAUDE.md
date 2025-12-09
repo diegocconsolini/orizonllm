@@ -105,4 +105,50 @@ LiteLLM is a unified interface for 100+ LLM providers with two main components:
 ### Enterprise Features
 - Enterprise-specific code in `enterprise/` directory
 - Optional features enabled via environment variables
-- Separate licensing and authentication for enterprise features
+- **License bypass enabled** - see Fork Maintenance section below
+
+## Fork Maintenance (OrizonLLM)
+
+This is a fork of [BerriAI/litellm](https://github.com/BerriAI/litellm) with custom modifications.
+
+### Key Customizations
+
+1. **License Bypass** (`litellm/proxy/auth/litellm_license.py`)
+   - `is_premium()` returns `True` unconditionally
+   - Enables all enterprise features without license validation
+   - **CRITICAL**: Always preserve this file during upstream syncs
+
+2. **Branding** - OrizonLLM rebranding throughout
+
+### Upstream Sync Commands
+
+```bash
+# Check for license-related changes BEFORE merging
+./scripts/check-license-changes.sh
+
+# Full sync workflow (recommended)
+./scripts/sync-upstream.sh
+
+# Manual sync
+git fetch upstream
+git merge upstream/main --no-commit
+git checkout --ours litellm/proxy/auth/litellm_license.py && git add litellm/proxy/auth/litellm_license.py
+git checkout --ours README.md && git add README.md
+git checkout --ours CLAUDE.md && git add CLAUDE.md
+# resolve remaining conflicts, then commit
+```
+
+### Protected Files (Never Accept Upstream Version)
+
+| File | Reason |
+|------|--------|
+| `litellm/proxy/auth/litellm_license.py` | License bypass |
+| `README.md` | OrizonLLM branding |
+| `CLAUDE.md` | Custom development guide |
+| `pyproject.toml` | Package name (merge deps carefully) |
+
+### Documentation
+
+- `UPDATE_PLAN.md` - Full upstream sync procedure and conflict resolution
+- `scripts/check-license-changes.sh` - Detect new license checks in upstream
+- `scripts/sync-upstream.sh` - Automated sync with protected file handling
