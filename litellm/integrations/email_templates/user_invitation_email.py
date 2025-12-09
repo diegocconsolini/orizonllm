@@ -8,7 +8,7 @@ USER_INVITATION_EMAIL_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to LiteLLM</title>
+    <title>Welcome to OrizonLLM</title>
     <style>
         body, html {{
             margin: 0;

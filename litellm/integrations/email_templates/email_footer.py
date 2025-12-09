@@ -1,10 +1,9 @@
 EMAIL_FOOTER = """
 <div class="footer">
-            <p>© 2025 LiteLLM. All rights reserved.</p>
+            <p>© 2025 OrizonLLM by AudiVidi. All rights reserved.</p>
             <div class="social-links">
-                <a href="https://twitter.com/litellm">Twitter</a> • 
-                <a href="https://github.com/BerriAI/litellm">GitHub</a> • 
-                <a href="https://litellm.ai">Website</a>
+                <a href="https://audividi.ai">Website</a> •
+                <a href="https://api.audividi.ai">API Portal</a>
             </div>
 </div>
 """
