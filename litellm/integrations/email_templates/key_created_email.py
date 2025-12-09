@@ -156,15 +156,15 @@ KEY_CREATED_EMAIL_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <img src="{email_logo_url}" alt="LiteLLM Logo" style="height: 32px; width: auto;">
+            <img src="{email_logo_url}" alt="OrizonLLM Logo" style="height: 32px; width: auto;">
         </div>
         <div class="content">
             <div class="greeting">
                 <p>Hi {recipient_email},</p>
             </div>
-            
+
             <div class="message">
-                <p>Great news! Your LiteLLM API key is ready to use.</p>
+                <p>Great news! Your OrizonLLM API key is ready to use.</p>
             </div>
             
             <div class="budget-info">
@@ -198,7 +198,7 @@ response = client.chat.completions.create(<br>
 )
             </div>
             
-            <a href="https://docs.litellm.ai/docs/proxy/user_keys" class="btn" style="color: #ffffff;">View Documentation</a>
+            <a href="https://api.audividi.ai/api-reference" class="btn" style="color: #ffffff;">View API Reference</a>
             
             <div class="separator"></div>
             

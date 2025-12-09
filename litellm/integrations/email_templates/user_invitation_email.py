@@ -115,17 +115,17 @@ USER_INVITATION_EMAIL_TEMPLATE = """
 <body>
     <div class="container">
         <div class="logo">
-            <img src="{email_logo_url}" alt="LiteLLM Logo" style="height: 32px; width: auto;">
+            <img src="{email_logo_url}" alt="OrizonLLM Logo" style="height: 32px; width: auto;">
         </div>
         <div class="content">
-            <h1>Welcome to LiteLLM</h1>
+            <h1>Welcome to OrizonLLM</h1>
 
             <div class="greeting">
                 <p>Hi {recipient_email},</p>
             </div>
-            
+
             <div class="intro-text">
-                <p>LiteLLM allows you to call 100+ LLM providers in the OpenAI API format. Get started by accepting your invitation.</p>
+                <p>OrizonLLM is your enterprise AI gateway. Call 100+ LLM providers through a unified OpenAI-compatible API. Get started by accepting your invitation.</p>
             </div>
 
             <div class="btn-container">
@@ -138,34 +138,25 @@ USER_INVITATION_EMAIL_TEMPLATE = """
             
             <div class="divider"></div>
             
-            <a href="https://docs.litellm.ai/docs/proxy/user_keys" class="link-with-arrow">
-                Make your first LLM request →
+            <a href="https://api.audividi.ai/ui/" class="link-with-arrow">
+                Access Admin Dashboard →
                 <span class="arrow"></span>
             </a>
-            
-            <p>Making LLM requests with OpenAI SDK, Langchain, LlamaIndex, and more.</p>
-            
+
+            <p>Manage API keys, monitor usage, and configure models through the web interface.</p>
+
             <div class="divider"></div>
-            
-            <a href="https://docs.litellm.ai/docs/supported_endpoints" class="link-with-arrow">
-                Supported Endpoints →
+
+            <a href="https://api.audividi.ai/api-reference" class="link-with-arrow">
+                API Reference →
                 <span class="arrow"></span>
             </a>
-            
-            <p>View all supported LLM endpoints on LiteLLM (/chat/completions, /embeddings, /responses etc.)</p>
-            
+
+            <p>View all supported endpoints: /chat/completions, /embeddings, /completions and more.</p>
+
             <div class="divider"></div>
-            
-            <a href="https://docs.litellm.ai/docs/pass_through/vertex_ai" class="link-with-arrow">
-                Passthrough Endpoints →
-                <span class="arrow"></span>
-            </a>
-            
-            <p>We support calling VertexAI, Anthropic, and other providers in their native API format.</p>
-            
-            <div class="divider"></div>
-            
-            <p>Thanks for signing up. We're here to help you and your team. If you have any questions, contact us at {email_support_contact}</p>
+
+            <p>Thanks for joining OrizonLLM. We're here to help you and your team. If you have any questions, contact us at {email_support_contact}</p>
 
         </div>
         {email_footer}
