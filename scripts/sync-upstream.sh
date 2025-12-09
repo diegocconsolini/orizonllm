@@ -15,12 +15,16 @@ PROTECTED_FILES=(
     "litellm/proxy/auth/litellm_license.py"
     "README.md"
     "CLAUDE.md"
+    "UPDATE_PLAN.md"
 )
 
 echo "=========================================="
 echo "  OrizonLLM Upstream Sync"
 echo "=========================================="
 echo ""
+
+# Configure the 'ours' merge driver (for .gitattributes merge=ours)
+git config merge.ours.driver true 2>/dev/null || true
 
 # Check for uncommitted changes
 if ! git diff-index --quiet HEAD --; then

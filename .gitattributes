@@ -1,1 +1,23 @@
 *.ipynb linguist-vendored
+
+# ============================================================================
+# MERGE STRATEGY: Protected files during upstream sync
+# ============================================================================
+# These files contain OrizonLLM customizations and should NEVER be overwritten
+# by upstream merges. The 'ours' merge driver keeps our version on conflicts.
+#
+# Note: Git's merge=ours only works when there's a conflict. For guaranteed
+# protection, always use the sync scripts: ./scripts/sync-upstream.sh
+# ============================================================================
+
+# License bypass - CRITICAL: keeps enterprise features unlocked
+litellm/proxy/auth/litellm_license.py merge=ours
+
+# Branding and documentation
+README.md merge=ours
+CLAUDE.md merge=ours
+UPDATE_PLAN.md merge=ours
+
+# Custom scripts
+scripts/check-license-changes.sh merge=ours
+scripts/sync-upstream.sh merge=ours

@@ -36,17 +36,22 @@ Update your OrizonLLM fork with upstream LiteLLM changes while:
 ### Phase 1: Preparation (Do Once)
 
 ```bash
-# 1. Create a backup branch of your current state
+# 1. Configure the 'ours' merge driver (one-time setup)
+git config merge.ours.driver true
+
+# 2. Create a backup branch of your current state
 git checkout main
 git branch backup-before-upstream-sync-$(date +%Y%m%d)
 
-# 2. Ensure upstream is configured (already done in your case)
+# 3. Ensure upstream is configured (already done in your case)
 git remote -v
 # Should show: upstream git@github.com:BerriAI/litellm.git
 
-# 3. Fetch latest upstream changes
+# 4. Fetch latest upstream changes
 git fetch upstream
 ```
+
+**Note:** The `.gitattributes` file marks protected files with `merge=ours`, which tells git to keep our version during conflicts. The `git config merge.ours.driver true` command enables this driver.
 
 ### Phase 2: Create Update Branch
 

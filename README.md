@@ -176,60 +176,81 @@ All features that normally require a LiteLLM Enterprise license are enabled:
 
 ## Update Workflow
 
-OrizonLLM stays in sync with upstream LiteLLM through a semi-automated workflow.
+OrizonLLM stays in sync with upstream LiteLLM through automated scripts that preserve your customizations.
 
-### Quick Update
+### Quick Update (Recommended)
 
 ```bash
-# Run the update tool
-./scripts/maintenance/update-orizon.sh
+# 1. Check for license changes FIRST (important!)
+./scripts/check-license-changes.sh
 
-# Select option:
-# 1) Full update (sync + build + push)
-# 2) Sync upstream only
-# 3) Build and push only
-# 4) Check upstream status
+# 2. Run the full sync workflow
+./scripts/sync-upstream.sh
 ```
 
 ### Manual Steps
 
 ```bash
 # 1. Check how far behind upstream
-./scripts/maintenance/update-orizon.sh
-# Select option 4
+git fetch upstream
+git rev-list --count main..upstream/main  # Shows commits behind
 
-# 2. Sync with upstream LiteLLM
-./scripts/maintenance/sync-upstream.sh
+# 2. Check for license-related changes
+./scripts/check-license-changes.sh
 
-# 3. If conflicts, resolve them (usually just litellm_license.py)
+# 3. Merge upstream
+git merge upstream/main --no-commit
+
+# 4. Auto-resolve protected files (CRITICAL)
+git checkout --ours litellm/proxy/auth/litellm_license.py && git add litellm/proxy/auth/litellm_license.py
+git checkout --ours README.md && git add README.md
+git checkout --ours CLAUDE.md && git add CLAUDE.md
+
+# 5. Resolve remaining conflicts manually
 git status
-# Edit conflicting files
-git add .
-git commit
+# Edit conflicting files...
 
-# 4. Build and push new image
-./scripts/maintenance/build-and-push.sh v1.60.0
+# 6. Commit and push
+git commit -m "chore: sync with upstream LiteLLM"
+git push origin main
 ```
 
 ### Update Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/maintenance/update-orizon.sh` | Main menu - complete workflow |
-| `scripts/maintenance/sync-upstream.sh` | Fetch & merge upstream changes |
-| `scripts/maintenance/build-and-push.sh` | Build Docker image & push to registry |
+| `scripts/check-license-changes.sh` | **Run first!** Detect new license checks in upstream |
+| `scripts/sync-upstream.sh` | Full sync workflow with auto-protection of key files |
 
-### Conflict Resolution
+### Protected Files (Never Accept Upstream Version)
 
-When merging upstream, conflicts typically occur in:
+These files are automatically preserved by `sync-upstream.sh`:
 
-| File | Resolution |
-|------|------------|
-| `litellm_license.py` | Re-apply `is_premium() return True` |
-| Branding files | Keep OrizonLLM branding |
-| `logo.jpg` | Keep our logo: `git checkout --ours litellm/proxy/logo.jpg` |
+| File | Reason |
+|------|--------|
+| `litellm/proxy/auth/litellm_license.py` | **License bypass** - `is_premium()` returns `True` |
+| `README.md` | OrizonLLM branding |
+| `CLAUDE.md` | Custom development guide |
 
-See [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) for full details.
+### License Bypass Details
+
+The enterprise unlock is a single modification in `litellm/proxy/auth/litellm_license.py`:
+
+```python
+def is_premium(self) -> bool:
+    """
+    ORIZON: Enterprise features unlocked.
+    All premium features are enabled without license validation.
+    """
+    return True
+```
+
+Upstream's version does actual license validation against `https://license.litellm.ai`.
+Your bypass simply returns `True` - skipping all validation.
+
+**⚠️ Always run `./scripts/check-license-changes.sh` before merging** to detect if upstream added new license checks elsewhere.
+
+See [UPDATE_PLAN.md](UPDATE_PLAN.md) for complete documentation.
 
 ---
 
