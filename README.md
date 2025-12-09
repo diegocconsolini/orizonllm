@@ -481,11 +481,96 @@ For complete details, see [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md).
 
 ---
 
+## Production Deployment (Railway)
+
+OrizonLLM is deployed on Railway for AudiVidi.
+
+### Live Deployment
+
+| Resource | URL/Value |
+|----------|-----------|
+| **API Endpoint** | https://api.audividi.ai |
+| **Admin UI** | https://api.audividi.ai/ui/ |
+| **Admin Login** | `admin` / `<LITELLM_MASTER_KEY>` |
+| **Railway Project** | AudiVidi-LLM |
+
+### Services
+
+| Service | Image/Source | Port |
+|---------|--------------|------|
+| orizonllm | `ghcr.io/diegocconsolini/orizonllm:latest` (private) | 4000 |
+| Postgres | Railway managed | 5432 |
+| Redis | Railway managed | 6379 |
+
+### Environment Variables (Railway)
+
+```bash
+# Database (auto-set via Railway references)
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+REDIS_HOST=${{Redis.REDISHOST}}
+REDIS_PASSWORD=${{Redis.REDIS_PASSWORD}}
+
+# OrizonLLM
+LITELLM_MASTER_KEY=sk-...        # Admin password
+LITELLM_SALT_KEY=...             # Encryption salt
+STORE_MODEL_IN_DB=True
+PORT=4000
+
+# AI Providers (add your keys)
+OPENAI_API_KEY=sk-...
+GROQ_API_KEY=gsk_...
+DEEPGRAM_API_KEY=...
+```
+
+### Configured Models
+
+| Model Name | Provider | Type |
+|------------|----------|------|
+| `whisper-1` | OpenAI | audio_transcription |
+| `groq/whisper-large-v3` | Groq | audio_transcription |
+| `deepgram/nova-2` | Deepgram | audio_transcription |
+| `gpt-4o-mini` | OpenAI | chat |
+| `groq/llama-3.1-8b-instant` | Groq | chat |
+
+### CI/CD Pipeline
+
+**Auto-deploy on push to `main`:**
+
+1. GitHub Actions builds Docker image
+2. Pushes to `ghcr.io/diegocconsolini/orizonllm:latest` (private)
+3. Triggers Railway redeploy
+
+**GitHub Secrets required:**
+- `RAILWAY_SERVICE_ID` - OrizonLLM service ID
+- `RAILWAY_TOKEN` - Railway API token
+
+### Railway Registry Credentials
+
+Railway pulls from private GHCR. Configured in:
+- Railway → orizonllm → Settings → Source → Registry Credentials
+- Username: `diegocconsolini`
+- Password: GitHub PAT with `read:packages` scope
+
+### Custom Domain
+
+- Domain: `api.audividi.ai`
+- DNS: CNAME → `3rpn2pun.up.railway.app` (Cloudflare)
+- SSL: Auto-managed by Railway
+
+### Security (Cloudflare)
+
+- WAF rules protect `/ui/*` (admin access)
+- API protected via virtual keys
+- Optional: Cloudflare Access with Microsoft SSO
+
+---
+
 ## Support
 
 - **Documentation**: [LiteLLM Docs](https://docs.litellm.ai/)
 - **Issues**: Private repository
-- **Updates**: Run `./scripts/maintenance/update-orizon.sh`
+- **Updates**: Run `./scripts/sync-upstream.sh`
 
 ---
 
