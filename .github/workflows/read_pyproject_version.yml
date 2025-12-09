@@ -1,9 +1,10 @@
 name: Read Version from pyproject.toml
 
+# Disabled for OrizonLLM - using deploy.yml for versioning
 on:
   push:
     branches:
-      - main  # Change this to the default branch of your repository
+      - disabled-workflow
 
 jobs:
   read-version:

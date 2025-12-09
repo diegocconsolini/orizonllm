@@ -1,10 +1,10 @@
 name: Helm unit test
 
+# Disabled for OrizonLLM - not using Helm
 on:
-  pull_request:
   push:
     branches:
-      - main
+      - disabled-workflow
 
 jobs:
   unit-test:
