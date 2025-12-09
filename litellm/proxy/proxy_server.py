@@ -926,7 +926,15 @@ async def openai_exception_handler(request: Request, exc: ProxyException):
 
 
 router = APIRouter()
-origins = ["*"]
+
+# CORS origins - configurable via CORS_ORIGINS environment variable
+# Format: comma-separated origins, e.g., "https://example.com,https://app.example.com"
+# Defaults to ["*"] if not set
+_cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if _cors_origins_env and _cors_origins_env != "*":
+    origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+else:
+    origins = ["*"]
 
 
 # get current directory
