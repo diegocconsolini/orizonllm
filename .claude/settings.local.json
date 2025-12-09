@@ -5,7 +5,9 @@
       "Bash(git fetch:*)",
       "Bash(git rev-list:*)",
       "Bash(mkdir:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "WebFetch(domain:api.audividi.ai)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
