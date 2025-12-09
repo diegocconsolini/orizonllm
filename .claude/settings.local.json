@@ -15,7 +15,9 @@
       "Bash(do dig +short $sub.audividi.ai)",
       "Bash(done)",
       "Bash(nslookup:*)",
-      "Bash(host:*)"
+      "Bash(host:*)",
+      "Bash(openssl s_client:*)",
+      "Bash(openssl x509:*)"
     ],
     "deny": [],
     "ask": []
