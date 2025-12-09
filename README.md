@@ -517,6 +517,9 @@ LITELLM_SALT_KEY=...             # Encryption salt
 STORE_MODEL_IN_DB=True
 PORT=4000
 
+# Security - CORS (restrict allowed origins)
+CORS_ALLOW_ORIGIN=https://audividi.ai,https://app.audividi.ai,https://orizonqa.guatemaltek.com
+
 # AI Providers (add your keys)
 OPENAI_API_KEY=sk-...
 GROQ_API_KEY=gsk_...
@@ -560,9 +563,28 @@ Railway pulls from private GHCR. Configured in:
 
 ### Security (Cloudflare)
 
-- WAF rules protect `/ui/*` (admin access)
-- API protected via virtual keys
-- Optional: Cloudflare Access with Microsoft SSO
+| Protection | Status |
+|------------|--------|
+| Geographic blocking | RU, IR, KP, CU, SY, UA, CN, VN, BY, MM |
+| Bot/scraper blocking | python-requests, wget, curl, sqlmap |
+| AI crawler blocking | ChatGPT, Perplexity, MistralAI, etc. |
+| API docs blocked | /openapi.json, /routes, /redoc |
+| Rate limiting | 60 req/min on /v1/* and auth endpoints |
+| Leaked credential check | Blocks compromised passwords |
+| OWASP WAF | Cloudflare managed ruleset |
+| CORS restriction | Only allowed origins (see env vars) |
+
+**Custom Rules:**
+1. Block high-risk countries
+2. Block malicious user agents
+3. Block AI crawlers
+4. Block public API documentation
+5. Rate limit API & auth endpoints
+
+**Environment Variable:**
+```bash
+CORS_ALLOW_ORIGIN=https://audividi.ai,https://app.audividi.ai,https://orizonqa.guatemaltek.com
+```
 
 ---
 
