@@ -146,6 +146,17 @@ git checkout --ours CLAUDE.md && git add CLAUDE.md
 | `README.md` | OrizonLLM branding |
 | `CLAUDE.md` | Custom development guide |
 | `pyproject.toml` | Package name (merge deps carefully) |
+| `litellm/integrations/email_templates/email_footer.py` | OrizonLLM email footer |
+| `litellm/integrations/email_templates/user_invitation_email.py` | Custom email branding |
+| `litellm/integrations/email_templates/key_created_email.py` | Custom email branding |
+| `litellm/integrations/email_templates/key_rotated_email.py` | Custom email branding |
+| `litellm/proxy/common_utils/html_forms/ui_login.py` | OrizonLLM login page |
+| `litellm/proxy/common_utils/html_forms/cli_sso_success.py` | OrizonLLM SSO success |
+| `litellm/proxy/common_utils/html_forms/jwt_display_template.py` | OrizonLLM JWT display |
+| `ui/litellm-dashboard/src/app/layout.tsx` | Page title & meta |
+| `ui/litellm-dashboard/src/components/navbar.tsx` | Logo size customization |
+| `ui/litellm-dashboard/src/app/favicon.ico` | OrizonLLM favicon |
+| `litellm/proxy/proxy_server.py` | CORS customization (line 929-937) |
 
 ### Documentation
 

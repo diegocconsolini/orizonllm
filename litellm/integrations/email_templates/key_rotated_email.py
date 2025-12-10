@@ -156,7 +156,7 @@ KEY_ROTATED_EMAIL_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <img src="{email_logo_url}" alt="LiteLLM Logo" style="height: 32px; width: auto;">
+            <img src="{email_logo_url}" alt="OrizonLLM Logo" style="height: 32px; width: auto;">
         </div>
         <div class="content">
             <div class="greeting">
@@ -164,7 +164,7 @@ KEY_ROTATED_EMAIL_TEMPLATE = """
             </div>
             
             <div class="message">
-                <p><strong>Your LiteLLM API key has been rotated</strong> as part of our ongoing commitment to security best practices.</p>
+                <p><strong>Your OrizonLLM API key has been rotated</strong> as part of our ongoing commitment to security best practices.</p>
                 <p style="margin-top: 16px;">Your previous API key has been deactivated and will no longer work. Please update your applications with the new key below.</p>
             </div>
             
@@ -210,7 +210,7 @@ response = client.chat.completions.create(<br>
                 <li style="margin-bottom: 8px;">Rotate your keys periodically as a security best practice</li>
             </ul>
             
-            <a href="https://docs.litellm.ai/docs/proxy/user_keys" class="btn" style="color: #ffffff;">View Documentation</a>
+            <a href="https://api.audividi.ai/api-reference" class="btn" style="color: #ffffff;">View Documentation</a>
             
             <div class="separator"></div>
             

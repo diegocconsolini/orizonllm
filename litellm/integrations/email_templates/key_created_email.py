@@ -1,5 +1,5 @@
 """
-Modern Email Templates for LiteLLM Email Service with professional styling
+Modern Email Templates for OrizonLLM Email Service with professional styling
 """
 
 KEY_CREATED_EMAIL_TEMPLATE = """
