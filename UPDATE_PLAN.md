@@ -94,6 +94,25 @@ git add litellm/proxy/auth/litellm_license.py
 git checkout --ours README.md
 git checkout --ours CLAUDE.md
 git add README.md CLAUDE.md
+
+# Email templates (customized branding)
+git checkout --ours litellm/integrations/email_templates/email_footer.py
+git checkout --ours litellm/integrations/email_templates/user_invitation_email.py
+git checkout --ours litellm/integrations/email_templates/key_created_email.py
+git checkout --ours litellm/integrations/email_templates/key_rotated_email.py
+git add litellm/integrations/email_templates/*.py
+
+# HTML forms (login, SSO)
+git checkout --ours litellm/proxy/common_utils/html_forms/ui_login.py
+git checkout --ours litellm/proxy/common_utils/html_forms/cli_sso_success.py
+git checkout --ours litellm/proxy/common_utils/html_forms/jwt_display_template.py
+git add litellm/proxy/common_utils/html_forms/*.py
+
+# UI dashboard customizations
+git checkout --ours ui/litellm-dashboard/src/app/layout.tsx
+git checkout --ours ui/litellm-dashboard/src/components/navbar.tsx
+git checkout --ours ui/litellm-dashboard/src/app/favicon.ico
+git add ui/litellm-dashboard/src/app/layout.tsx ui/litellm-dashboard/src/components/navbar.tsx ui/litellm-dashboard/src/app/favicon.ico
 ```
 
 **Your license bypass** (`litellm/proxy/auth/litellm_license.py`):
