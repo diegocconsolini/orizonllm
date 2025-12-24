@@ -5,9 +5,16 @@
 # This script builds the OrizonLLM Docker image and pushes it to your
 # private container registry (GitHub Container Registry or Azure ACR).
 #
-# Usage: ./scripts/maintenance/build-and-push.sh [version]
-# Example: ./scripts/maintenance/build-and-push.sh v1.60.0
-#          ./scripts/maintenance/build-and-push.sh  (uses git tag or 'latest')
+# Usage: ./scripts/maintenance/build-and-push.sh [OPTIONS] [version]
+#
+# Options:
+#   -y, --yes      Non-interactive mode (auto-confirm all prompts)
+#   -h, --help     Show this help message
+#
+# Examples:
+#   ./scripts/maintenance/build-and-push.sh v1.60.0
+#   ./scripts/maintenance/build-and-push.sh -y           # Non-interactive with 'latest'
+#   ./scripts/maintenance/build-and-push.sh -y v1.60.0   # Non-interactive with version
 #
 
 set -e
@@ -43,22 +50,71 @@ DOCKERHUB_IMAGE_NAME="orizonllm"
 # END CONFIGURATION
 # ============================================
 
+# Parse command line arguments
+NON_INTERACTIVE=false
+VERSION=""
+
+show_help() {
+    echo "Usage: $0 [OPTIONS] [version]"
+    echo ""
+    echo "Options:"
+    echo "  -y, --yes      Non-interactive mode (auto-confirm all prompts)"
+    echo "  -h, --help     Show this help message"
+    echo ""
+    echo "Environment variables:"
+    echo "  REGISTRY_TYPE    Registry type: ghcr, acr, or dockerhub (default: ghcr)"
+    echo "  GHCR_USERNAME    GitHub username (default: diegocconsolini)"
+    echo "  GITHUB_TOKEN     GitHub token for authentication"
+    echo ""
+    echo "Examples:"
+    echo "  $0 v1.60.0              # Interactive, specific version"
+    echo "  $0 -y                   # Non-interactive, auto-version"
+    echo "  $0 -y v1.60.0           # Non-interactive, specific version"
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -y|--yes)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -*)
+            echo -e "${RED}Unknown option: $1${NC}"
+            show_help
+            exit 1
+            ;;
+        *)
+            VERSION="$1"
+            shift
+            ;;
+    esac
+done
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}   OrizonLLM - Build & Push Tool${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
+
+if [ "$NON_INTERACTIVE" = true ]; then
+    echo -e "${YELLOW}Running in non-interactive mode${NC}"
+    echo ""
+fi
 
 # Get repo root
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 cd "$REPO_ROOT"
 
 # Determine version
-if [ -n "$1" ]; then
-    VERSION="$1"
-elif git describe --tags --exact-match HEAD 2>/dev/null; then
-    VERSION=$(git describe --tags --exact-match HEAD)
-else
-    VERSION="latest"
+if [ -z "$VERSION" ]; then
+    if git describe --tags --exact-match HEAD 2>/dev/null; then
+        VERSION=$(git describe --tags --exact-match HEAD)
+    else
+        VERSION="latest"
+    fi
 fi
 
 # Also create a date-based tag
@@ -70,6 +126,7 @@ echo -e "  Registry type: ${REGISTRY_TYPE}"
 echo -e "  Version: ${VERSION}"
 echo -e "  Date tag: ${DATE_TAG}"
 echo -e "  Git SHA: ${SHORT_SHA}"
+echo -e "  Non-interactive: ${NON_INTERACTIVE}"
 echo ""
 
 # Set registry-specific variables
@@ -116,10 +173,14 @@ case "$REGISTRY_TYPE" in
             echo -e "${YELLOW}  Not logged in to GitHub Container Registry${NC}"
             echo -e "  Run: ${BLUE}echo \$GITHUB_TOKEN | docker login ghcr.io -u ${GHCR_USERNAME} --password-stdin${NC}"
             echo ""
-            read -p "Try to continue anyway? (y/N) " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                exit 1
+            if [ "$NON_INTERACTIVE" = true ]; then
+                echo -e "${YELLOW}  Continuing anyway (non-interactive mode)...${NC}"
+            else
+                read -p "Try to continue anyway? (y/N) " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    exit 1
+                fi
             fi
         else
             echo -e "${GREEN}  ✓ Authenticated with GitHub Container Registry${NC}"
@@ -130,10 +191,14 @@ case "$REGISTRY_TYPE" in
             echo -e "${YELLOW}  Not logged in to Azure Container Registry${NC}"
             echo -e "  Run: ${BLUE}az acr login --name ${ACR_REGISTRY%%.*}${NC}"
             echo ""
-            read -p "Try to continue anyway? (y/N) " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                exit 1
+            if [ "$NON_INTERACTIVE" = true ]; then
+                echo -e "${YELLOW}  Continuing anyway (non-interactive mode)...${NC}"
+            else
+                read -p "Try to continue anyway? (y/N) " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    exit 1
+                fi
             fi
         else
             echo -e "${GREEN}  ✓ Authenticated with Azure Container Registry${NC}"
@@ -178,10 +243,19 @@ docker images "${IMAGE_NAME}" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size
 # Push to registry
 echo ""
 echo -e "${YELLOW}Step 4: Pushing to registry...${NC}"
-read -p "Push images to ${REGISTRY}? (y/N) " -n 1 -r
-echo
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+DO_PUSH=false
+if [ "$NON_INTERACTIVE" = true ]; then
+    DO_PUSH=true
+else
+    read -p "Push images to ${REGISTRY}? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        DO_PUSH=true
+    fi
+fi
+
+if [ "$DO_PUSH" = true ]; then
     echo -e "  Pushing ${IMAGE_NAME}:${VERSION}..."
     docker push "${IMAGE_NAME}:${VERSION}"
 
