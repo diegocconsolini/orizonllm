@@ -163,3 +163,63 @@ git checkout --ours CLAUDE.md && git add CLAUDE.md
 - `UPDATE_PLAN.md` - Full upstream sync procedure and conflict resolution
 - `scripts/check-license-changes.sh` - Detect new license checks in upstream
 - `scripts/sync-upstream.sh` - Automated sync with protected file handling
+
+## Docker Deployment (GHCR + Railway)
+
+### Building and Pushing to GHCR
+
+```bash
+# Get current commit SHA for unique tag
+SHA=$(git rev-parse --short HEAD)
+
+# Build with commit SHA tag
+docker build -t ghcr.io/diegocconsolini/orizonllm:$SHA \
+             -t ghcr.io/diegocconsolini/orizonllm:latest \
+             -f Dockerfile .
+
+# Push to GitHub Container Registry
+docker push ghcr.io/diegocconsolini/orizonllm:$SHA
+docker push ghcr.io/diegocconsolini/orizonllm:latest
+```
+
+### Non-Interactive Build Script
+
+```bash
+# Uses -y flag for non-interactive mode
+./scripts/maintenance/build-and-push.sh -y
+
+# Or with specific version
+./scripts/maintenance/build-and-push.sh -y v1.60.0
+```
+
+### Railway Deployment
+
+```bash
+# Update image reference on Railway
+railway variables --set "RAILWAY_DOCKER_IMAGE=ghcr.io/diegocconsolini/orizonllm:$SHA" -s orizonllm
+
+# Redeploy with new image
+railway service orizonllm && railway redeploy --yes
+```
+
+### Railway Service References
+
+Use `${{service.VARIABLE}}` syntax to create service links in Railway:
+
+```bash
+# Set DATABASE_URL on pgvector service first
+railway variables --set 'DATABASE_URL=postgresql://${{POSTGRES_USER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{POSTGRES_DB}}' -s pgvector
+
+# Reference it from orizonllm (creates visual link)
+railway variables --set 'DATABASE_URL=${{pgvector.DATABASE_URL}}' -s orizonllm
+```
+
+### Image Tags Convention
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Most recent build |
+| `YYYYMMDD` | Date-based tag |
+| `{short-sha}` | Git commit SHA (e.g., `d9d5efc617`) |
+
+Always use SHA tags for Railway deployments to ensure the correct version is pulled.
