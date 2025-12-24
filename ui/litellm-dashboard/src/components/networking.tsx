@@ -124,7 +124,7 @@ export interface PromptSpec {
   prompt_info: PromptInfo;
   created_at?: string;
   updated_at?: string;
-  version?: number;  // Explicit version number for version history
+  version?: number; // Explicit version number for version history
 }
 
 export interface PromptTemplateBase {
@@ -182,7 +182,7 @@ export interface ProviderCredentialFieldMetadata {
   placeholder?: string | null;
   tooltip?: string | null;
   required?: boolean;
-  field_type?: "text" | "password" | "select" | "upload";
+  field_type?: "text" | "password" | "select" | "upload" | "textarea";
   options?: string[] | null;
   default_value?: string | null;
 }
@@ -195,16 +195,42 @@ export interface ProviderCreateInfo {
   credential_fields: ProviderCredentialFieldMetadata[];
 }
 
+export interface AgentCredentialFieldMetadata {
+  key: string;
+  label: string;
+  placeholder?: string | null;
+  tooltip?: string | null;
+  required?: boolean;
+  field_type?: "text" | "password" | "select" | "upload" | "textarea";
+  options?: string[] | null;
+  default_value?: string | null;
+  include_in_litellm_params?: boolean;
+}
+
+export interface AgentCreateInfo {
+  agent_type: string;
+  agent_type_display_name: string;
+  description?: string | null;
+  logo_url?: string | null;
+  credential_fields: AgentCredentialFieldMetadata[];
+  litellm_params_template?: Record<string, string> | null;
+  model_template?: string | null;
+  use_a2a_form_fields?: boolean;
+}
+
 export interface PublicModelHubInfo {
   docs_title: string;
   custom_docs_description: string | null;
   litellm_version: string;
-  useful_links: Record<string, string>;
+  // Supports both old format (Record<string, string>) and new format (Record<string, {url: string, index: number}>)
+  useful_links: Record<string, string | { url: string; index: number }>;
 }
 
 export interface LiteLLMWellKnownUiConfig {
   server_root_path: string;
   proxy_base_url: string | null;
+  auto_redirect_to_sso: boolean;
+  admin_ui_disabled: boolean;
 }
 
 export interface CredentialsResponse {
@@ -251,6 +277,26 @@ export const getProviderCreateMetadata = async (): Promise<ProviderCreateInfo[]>
   }
 
   const jsonData: ProviderCreateInfo[] = await response.json();
+  return jsonData;
+};
+
+export const getAgentCreateMetadata = async (): Promise<AgentCreateInfo[]> => {
+  /**
+   * Fetch agent type metadata from the proxy's public endpoint.
+   * This is used by the UI to dynamically render agent-specific credential fields.
+   */
+  const url = proxyBaseUrl ? `${proxyBaseUrl}/public/agents/fields` : `/public/agents/fields`;
+  const response = await fetch(url, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Failed to fetch agent create metadata:", response.status, errorText);
+    throw new Error("Failed to load agent configuration");
+  }
+
+  const jsonData: AgentCreateInfo[] = await response.json();
   return jsonData;
 };
 
@@ -309,13 +355,12 @@ export const getOpenAPISchema = async () => {
   return jsonData;
 };
 
-export const modelCostMap = async (accessToken: string) => {
+export const modelCostMap = async () => {
   try {
-    const url = proxyBaseUrl ? `${proxyBaseUrl}/get/litellm_model_cost_map` : `/get/litellm_model_cost_map`;
+    const url = proxyBaseUrl ? `${proxyBaseUrl}/public/litellm_model_cost_map` : `/public/litellm_model_cost_map`;
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        [globalLitellmHeaderName]: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
     });
@@ -1735,6 +1780,44 @@ export const organizationDailyActivityCall = async (
   });
 };
 
+export const customerDailyActivityCall = async (
+  accessToken: string,
+  startTime: Date,
+  endTime: Date,
+  page: number = 1,
+  customerIds: string[] | null = null,
+) => {
+  return fetchDailyActivity({
+    accessToken,
+    endpoint: "/customer/daily/activity",
+    startTime,
+    endTime,
+    page,
+    extraQueryParams: {
+      end_user_ids: customerIds,
+    },
+  });
+};
+
+export const agentDailyActivityCall = async (
+  accessToken: string,
+  startTime: Date,
+  endTime: Date,
+  page: number = 1,
+  agentIds: string[] | null = null,
+) => {
+  return fetchDailyActivity({
+    accessToken,
+    endpoint: "/agent/daily/activity",
+    startTime,
+    endTime,
+    page,
+    extraQueryParams: {
+      agent_ids: agentIds,
+    },
+  });
+};
+
 export const getTotalSpendCall = async (accessToken: string) => {
   /**
    * Get all models on proxy
@@ -2282,7 +2365,10 @@ export const modelExceptionsCall = async (
   }
 };
 
-export const updateUsefulLinksCall = async (accessToken: string, useful_links: Record<string, string>) => {
+export const updateUsefulLinksCall = async (
+  accessToken: string,
+  useful_links: Record<string, string | { url: string; index: number }>,
+) => {
   try {
     const url = proxyBaseUrl ? `${proxyBaseUrl}/model_hub/update_useful_links` : `/model_hub/update_useful_links`;
     const response = await fetch(url, {
@@ -2510,7 +2596,7 @@ export const allEndUsersCall = async (accessToken: string) => {
     console.log(data);
     return data;
   } catch (error) {
-    console.error("Failed to create key:", error);
+    console.error("Failed to fetch end users:", error);
     throw error;
   }
 };
@@ -2602,6 +2688,7 @@ export const uiSpendLogsCall = async (
   status_filter?: string,
   model?: string,
   keyAlias?: string,
+  error_code?: string,
 ) => {
   try {
     // Construct base URL
@@ -2621,6 +2708,7 @@ export const uiSpendLogsCall = async (
     if (status_filter) queryParams.append("status_filter", status_filter);
     if (model) queryParams.append("model", model);
     if (keyAlias) queryParams.append("key_alias", keyAlias);
+    if (error_code) queryParams.append("error_code", error_code);
     // Append query parameters to URL if any exist
     const queryString = queryParams.toString();
     if (queryString) {
@@ -5963,7 +6051,7 @@ export const listMCPTools = async (accessToken: string, serverId: string) => {
       throw new Error("Failed to fetch MCP tools");
     }
 
-    // Return the full response object which includes tools, error, and message
+    // Return the full response object which includes tools, error, message, and stack_trace
     return data;
   } catch (error) {
     console.error("Failed to fetch MCP tools:", error);
@@ -5972,6 +6060,7 @@ export const listMCPTools = async (accessToken: string, serverId: string) => {
       tools: [],
       error: "network_error",
       message: error instanceof Error ? error.message : "Failed to fetch MCP tools",
+      stack_trace: null,
     };
   }
 };
@@ -6750,6 +6839,40 @@ export const getGuardrailProviderSpecificParams = async (accessToken: string) =>
   }
 };
 
+export const getCategoryYaml = async (accessToken: string, categoryName: string) => {
+  try {
+    // URL encode the category name to handle special characters
+    const encodedCategoryName = encodeURIComponent(categoryName);
+    const url = proxyBaseUrl
+      ? `${proxyBaseUrl}/guardrails/ui/category_yaml/${encodedCategoryName}`
+      : `/guardrails/ui/category_yaml/${encodedCategoryName}`;
+
+    console.log(`Fetching category YAML from: ${url}`);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        [globalLitellmHeaderName]: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`Failed to get category YAML. Status: ${response.status}, Error:`, errorData);
+      handleError(errorData);
+      throw new Error(`Failed to get category YAML: ${response.status} ${errorData}`);
+    }
+
+    const data = await response.json();
+    console.log("Category YAML response:", data);
+    return data;
+  } catch (error) {
+    console.error("Failed to get category YAML:", error);
+    throw error;
+  }
+};
+
 export const getAgentsList = async (accessToken: string) => {
   try {
     const url = proxyBaseUrl ? `${proxyBaseUrl}/v1/agents` : `/v1/agents`;
@@ -7414,7 +7537,11 @@ interface RegisterMcpOAuthClientPayload {
   token_endpoint_auth_method?: string;
 }
 
-export const registerMcpOAuthClient = async (accessToken: string, serverId: string, payload: RegisterMcpOAuthClientPayload) => {
+export const registerMcpOAuthClient = async (
+  accessToken: string,
+  serverId: string,
+  payload: RegisterMcpOAuthClientPayload,
+) => {
   const base = getProxyBaseUrl();
   const normalizedServerId = encodeURIComponent(serverId.trim());
   const url = `${base}/v1/mcp/server/oauth/${normalizedServerId}/register`;
@@ -7424,7 +7551,7 @@ export const registerMcpOAuthClient = async (accessToken: string, serverId: stri
     headers: {
       [globalLitellmHeaderName]: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      "Accept": "application/json, text/event-stream",
+      Accept: "application/json, text/event-stream",
     },
     body: JSON.stringify(payload),
   });
@@ -7968,4 +8095,79 @@ const deriveErrorMessage = (errorData: any): string => {
     errorData?.error ||
     JSON.stringify(errorData)
   );
+};
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  redirect_url: string;
+}
+
+export const loginCall = async (username: string, password: string): Promise<LoginResponse> => {
+  const proxyBaseUrl = getProxyBaseUrl();
+  const loginUrl = proxyBaseUrl ? `${proxyBaseUrl}/v2/login` : "/v2/login";
+
+  const body = JSON.stringify({
+    username,
+    password,
+  });
+
+  const response = await fetch(loginUrl, {
+    method: "POST",
+    body,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMessage = deriveErrorMessage(errorData);
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+export const getUiSettings = async (accessToken: string) => {
+  const proxyBaseUrl = getProxyBaseUrl();
+  const url = proxyBaseUrl ? `${proxyBaseUrl}/get/ui_settings` : `/get/ui_settings`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      [globalLitellmHeaderName]: `Bearer ${accessToken}`,
+    },
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMessage = deriveErrorMessage(errorData);
+    throw new Error(errorMessage);
+  }
+  const data = await response.json();
+  return data;
+};
+
+export const updateUiSettings = async (accessToken: string, settings: Record<string, any>) => {
+  const proxyBaseUrl = getProxyBaseUrl();
+  const url = proxyBaseUrl ? `${proxyBaseUrl}/update/ui_settings` : `/update/ui_settings`;
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      [globalLitellmHeaderName]: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMessage = deriveErrorMessage(errorData);
+    throw new Error(errorMessage);
+  }
+  const data = await response.json();
+  return data;
 };

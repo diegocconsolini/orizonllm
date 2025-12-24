@@ -1,15 +1,24 @@
+<<<<<<< HEAD
 # OrizonLLM Dockerfile
 # Uses slim images for faster builds (pre-built wheels available)
 
 ARG LITELLM_BUILD_IMAGE=python:3.11-slim
 ARG LITELLM_RUNTIME_IMAGE=python:3.11-slim
 
+=======
+# Base image for building
+ARG LITELLM_BUILD_IMAGE=cgr.dev/chainguard/wolfi-base
+
+# Runtime image
+ARG LITELLM_RUNTIME_IMAGE=cgr.dev/chainguard/wolfi-base
+>>>>>>> upstream/main
 # Builder stage
 FROM $LITELLM_BUILD_IMAGE AS builder
 
 WORKDIR /app
 USER root
 
+<<<<<<< HEAD
 # Install build dependencies (Debian-based)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -21,6 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --upgrade pip>=24.3.1 && \
     pip install build
+=======
+# Install build dependencies
+RUN apk add --no-cache bash gcc py3-pip python3 python3-dev openssl openssl-dev
+
+RUN python -m pip install build
+>>>>>>> upstream/main
 
 # Copy the current directory contents into the container
 COPY . .
@@ -50,6 +65,7 @@ FROM $LITELLM_RUNTIME_IMAGE AS runtime
 
 USER root
 
+<<<<<<< HEAD
 # Install runtime dependencies (Debian-based)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
@@ -63,6 +79,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Upgrade pip
 RUN pip install --upgrade pip>=24.3.1
+=======
+# Install runtime dependencies
+RUN apk add --no-cache bash openssl tzdata nodejs npm python3 py3-pip
+>>>>>>> upstream/main
 
 WORKDIR /app
 

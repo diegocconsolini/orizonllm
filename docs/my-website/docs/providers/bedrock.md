@@ -7,7 +7,7 @@ ALL Bedrock models (Anthropic, Meta, Deepseek, Mistral, Amazon, etc.) are Suppor
 | Property | Details |
 |-------|-------|
 | Description | Amazon Bedrock is a fully managed service that offers a choice of high-performing foundation models (FMs). |
-| Provider Route on LiteLLM | `bedrock/`, [`bedrock/converse/`](#set-converse--invoke-route), [`bedrock/invoke/`](#set-invoke-route), [`bedrock/converse_like/`](#calling-via-internal-proxy), [`bedrock/llama/`](#deepseek-not-r1), [`bedrock/deepseek_r1/`](#deepseek-r1), [`bedrock/qwen3/`](#qwen3-imported-models), [`bedrock/openai/`](./bedrock_imported.md#openai-compatible-imported-models-qwen-25-vl-etc) |
+| Provider Route on LiteLLM | `bedrock/`, [`bedrock/converse/`](#set-converse--invoke-route), [`bedrock/invoke/`](#set-invoke-route), [`bedrock/converse_like/`](#calling-via-internal-proxy), [`bedrock/llama/`](#deepseek-not-r1), [`bedrock/deepseek_r1/`](#deepseek-r1), [`bedrock/qwen3/`](#qwen3-imported-models), [`bedrock/qwen2/`](./bedrock_imported.md#qwen2-imported-models), [`bedrock/openai/`](./bedrock_imported.md#openai-compatible-imported-models-qwen-25-vl-etc) |
 | Provider Doc | [Amazon Bedrock ↗](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) |
 | Supported OpenAI Endpoints | `/chat/completions`, `/completions`, `/embeddings`, `/images/generations` |
 | Rerank Endpoint | `/rerank` |
@@ -43,6 +43,8 @@ export AWS_BEARER_TOKEN_BEDROCK="your-api-key"
 
 Option 2: use the api_key parameter to pass in API key for completion, embedding, image_generation API calls.
 
+<Tabs>
+<TabItem value="sdk" label="SDK">
 ```python
 response = completion(
   model="bedrock/anthropic.claude-3-sonnet-20240229-v1:0",
@@ -50,7 +52,17 @@ response = completion(
   api_key="your-api-key"
 )
 ```
-
+</TabItem>
+<TabItem value="proxy" label="PROXY">
+```yaml
+model_list:
+  - model_name: bedrock-claude-3-sonnet
+    litellm_params:
+      model: bedrock/anthropic.claude-3-sonnet-20240229-v1:0
+      api_key: os.environ/AWS_BEARER_TOKEN_BEDROCK
+```
+</TabItem>
+</Tabs>
 
 ## Usage
 
@@ -945,6 +957,65 @@ curl http://0.0.0.0:4000/v1/chat/completions \
 </TabItem>
 </Tabs>
 
+## Usage - Service Tier
+
+Control the processing tier for your Bedrock requests using `serviceTier`. Valid values are `priority`, `default`, or `flex`.
+
+- `priority`: Higher priority processing with guaranteed capacity
+- `default`: Standard processing tier
+- `flex`: Cost-optimized processing for batch workloads
+
+[Bedrock ServiceTier API Reference](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ServiceTier.html)
+
+<Tabs>
+<TabItem value="sdk" label="SDK">
+
+```python
+from litellm import completion
+
+response = completion(
+    model="bedrock/converse/qwen.qwen3-235b-a22b-2507-v1:0",
+    messages=[{"role": "user", "content": "What is the capital of France?"}],
+    serviceTier={"type": "priority"},
+)
+```
+
+</TabItem>
+<TabItem value="proxy" label="PROXY">
+
+1. Setup config.yaml
+
+```yaml
+model_list:
+  - model_name: qwen3-235b-priority
+    litellm_params:
+      model: bedrock/converse/qwen.qwen3-235b-a22b-2507-v1:0
+      aws_region_name: ap-northeast-1
+      serviceTier:
+        type: priority
+```
+
+2. Start proxy
+
+```bash
+litellm --config /path/to/config.yaml
+```
+
+3. Test it!
+
+```bash
+curl http://0.0.0.0:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $LITELLM_KEY" \
+  -d '{
+    "model": "qwen3-235b-priority",
+    "messages": [{"role": "user", "content": "What is the capital of France?"}],
+    "serviceTier": {"type": "priority"}
+  }'
+```
+
+</TabItem>
+</Tabs>
 ## Usage - Bedrock Guardrails
 
 Example of using [Bedrock Guardrails with LiteLLM](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-converse-api.html)

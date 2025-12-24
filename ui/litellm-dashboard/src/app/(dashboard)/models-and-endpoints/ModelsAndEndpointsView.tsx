@@ -1,47 +1,46 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Text, Grid, Col } from "@tremor/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CredentialItem, credentialListCall, CredentialsResponse } from "@/components/networking";
+import { Col, Grid, Text } from "@tremor/react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { handleAddModelSubmit } from "@/components/add_model/handle_add_model_submit";
 
+import { useCredentials } from "@/app/(dashboard)/hooks/credentials/useCredentials";
+import { useModelsInfo } from "@/app/(dashboard)/hooks/models/useModels";
+import { Team } from "@/components/key_team_helpers/key_list";
 import CredentialsPanel from "@/components/model_add/credentials";
-import { getDisplayModelName } from "@/components/view_model/model_name_display";
-import { TabPanel, TabPanels, TabGroup, TabList, Tab, Icon } from "@tremor/react";
-import { DateRangePickerValue } from "@tremor/react";
 import {
-  modelCostMap,
-  modelMetricsCall,
-  streamingModelMetricsCall,
-  modelExceptionsCall,
-  modelMetricsSlowResponsesCall,
-  getCallbacksCall,
-  setCallbacksCall,
-  modelSettingsCall,
   adminGlobalActivityExceptions,
   adminGlobalActivityExceptionsPerDeployment,
   allEndUsersCall,
+  getCallbacksCall,
+  modelCostMap,
+  modelExceptionsCall,
+  modelMetricsCall,
+  modelMetricsSlowResponsesCall,
+  modelSettingsCall,
+  setCallbacksCall,
+  streamingModelMetricsCall,
 } from "@/components/networking";
-import { useModelsInfo } from "@/app/(dashboard)/hooks/models/useModels";
-import { Form } from "antd";
-import { Typography } from "antd";
-import { RefreshIcon } from "@heroicons/react/outline";
-import type { UploadProps } from "antd";
-import { Team } from "@/components/key_team_helpers/key_list";
-import TeamInfoView from "../../../components/team/team_info";
 import { Providers, getPlaceholder, getProviderModels } from "@/components/provider_info_helpers";
-import ModelInfoView from "../../../components/model_info_view";
+import { getDisplayModelName } from "@/components/view_model/model_name_display";
+import { RefreshIcon } from "@heroicons/react/outline";
+import { DateRangePickerValue, Icon, Tab, TabGroup, TabList, TabPanel, TabPanels } from "@tremor/react";
+import type { UploadProps } from "antd";
+import { Form, Typography } from "antd";
 import AddModelTab from "../../../components/add_model/add_model_tab";
+import ModelInfoView from "../../../components/model_info_view";
+import TeamInfoView from "../../../components/team/team_info";
 
-import HealthCheckComponent from "../../../components/model_dashboard/HealthCheckComponent";
-import PassThroughSettings from "../../../components/pass_through_settings";
-import ModelGroupAliasSettings from "../../../components/model_group_alias_settings";
-import { all_admin_roles } from "@/utils/roles";
-import NotificationsManager from "../../../components/molecules/notifications_manager";
 import AllModelsTab from "@/app/(dashboard)/models-and-endpoints/components/AllModelsTab";
-import PriceDataManagementTab from "@/app/(dashboard)/models-and-endpoints/components/PriceDataManagementTab";
-import ModelRetrySettingsTab from "@/app/(dashboard)/models-and-endpoints/components/ModelRetrySettingsTab";
 import ModelAnalyticsTab from "@/app/(dashboard)/models-and-endpoints/components/ModelAnalyticsTab/ModelAnalyticsTab";
+import ModelRetrySettingsTab from "@/app/(dashboard)/models-and-endpoints/components/ModelRetrySettingsTab";
+import PriceDataManagementTab from "@/app/(dashboard)/models-and-endpoints/components/PriceDataManagementTab";
+import { useUISettings } from "@/app/(dashboard)/hooks/uiSettings/useUISettings";
+import { all_admin_roles, internalUserRoles, isProxyAdminRole, isUserTeamAdminForAnyTeam } from "@/utils/roles";
+import HealthCheckComponent from "../../../components/model_dashboard/HealthCheckComponent";
+import ModelGroupAliasSettings from "../../../components/model_group_alias_settings";
+import NotificationsManager from "../../../components/molecules/notifications_manager";
+import PassThroughSettings from "../../../components/pass_through_settings";
 
 interface ModelDashboardProps {
   accessToken: string | null;
@@ -100,7 +99,7 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
   const [providerModels, setProviderModels] = useState<Array<string>>([]); // Explicitly typing providerModels as a string array
 
   const [providerSettings, setProviderSettings] = useState<ProviderSettings[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<Providers>(Providers.OpenAI);
+  const [selectedProvider, setSelectedProvider] = useState<Providers>(Providers.Anthropic);
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
 
   const [selectedModel, setSelectedModel] = useState<any>(null);
@@ -134,8 +133,6 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
 
   const [allEndUsers, setAllEndUsers] = useState<any[]>([]);
 
-  const [credentialsList, setCredentialsList] = useState<CredentialItem[]>([]);
-
   // Model Group Alias state
   const [modelGroupAlias, setModelGroupAlias] = useState<{ [key: string]: string }>({});
 
@@ -160,19 +157,21 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
     isLoading: isLoadingModels,
     refetch: refetchModels,
   } = useModelsInfo(accessToken, userID, userRole);
+  const { data: credentialsResponse } = useCredentials(accessToken);
+  const credentialsList = credentialsResponse?.credentials || [];
+  const { data: uiSettings } = useUISettings(accessToken || "");
+
+  const isProxyAdmin = userRole && isProxyAdminRole(userRole);
+  const isInternalUser = userRole && internalUserRoles.includes(userRole);
+  const isUserTeamAdmin = userID && isUserTeamAdminForAnyTeam(teams, userID);
+  const addModelDisabledForInternalUsers =
+    isInternalUser && uiSettings?.values?.disable_model_add_for_internal_users === true;
+  // Hide tab if user is NOT a proxy admin AND (internal user with setting enabled OR not a team admin)
+  const shouldHideAddModelTab = !isProxyAdmin && (addModelDisabledForInternalUsers || !isUserTeamAdmin);
 
   const setProviderModelsFn = (provider: Providers) => {
     const _providerModels = getProviderModels(provider, modelMap);
     setProviderModels(_providerModels);
-  };
-
-  const fetchCredentials = async (accessToken: string) => {
-    try {
-      const response: CredentialsResponse = await credentialListCall(accessToken);
-      setCredentialsList(response.credentials);
-    } catch (error) {
-      console.error("Error fetching credentials:", error);
-    }
   };
 
   useEffect(() => {
@@ -388,7 +387,8 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
     }
 
     const fetchModelMap = async () => {
-      const data = await modelCostMap(accessToken);
+      const data = await modelCostMap();
+      console.log(`received model cost map data: ${Object.keys(data)}`);
       setModelMap(data);
     };
     if (modelMap == null) {
@@ -571,6 +571,7 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
           userModels={all_models_on_proxy}
           editTeam={false}
           onUpdate={handleRefreshClick}
+          premiumUser={premiumUser}
         />
       </div>
     );
@@ -634,7 +635,7 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
               <TabList className="flex justify-between mt-2 w-full items-center">
                 <div className="flex">
                   {all_admin_roles.includes(userRole) ? <Tab>All Models</Tab> : <Tab>Your Models</Tab>}
-                  <Tab>Add Model</Tab>
+                  {!shouldHideAddModelTab && <Tab>Add Model</Tab>}
                   {all_admin_roles.includes(userRole) && <Tab>LLM Credentials</Tab>}
                   {all_admin_roles.includes(userRole) && <Tab>Pass-Through Endpoints</Tab>}
                   {all_admin_roles.includes(userRole) && <Tab>Health Status</Tab>}
@@ -666,32 +667,29 @@ const ModelsAndEndpointsView: React.FC<ModelDashboardProps> = ({
                   setEditModel={setEditModel}
                   modelData={modelData}
                 />
-                <TabPanel className="h-full">
-                  <AddModelTab
-                    form={addModelForm}
-                    handleOk={handleOk}
-                    selectedProvider={selectedProvider}
-                    setSelectedProvider={setSelectedProvider}
-                    providerModels={providerModels}
-                    setProviderModelsFn={setProviderModelsFn}
-                    getPlaceholder={getPlaceholder}
-                    uploadProps={uploadProps}
-                    showAdvancedSettings={showAdvancedSettings}
-                    setShowAdvancedSettings={setShowAdvancedSettings}
-                    teams={teams}
-                    credentials={credentialsList}
-                    accessToken={accessToken}
-                    userRole={userRole}
-                    premiumUser={premiumUser}
-                  />
-                </TabPanel>
+                {!shouldHideAddModelTab && (
+                  <TabPanel className="h-full">
+                    <AddModelTab
+                      form={addModelForm}
+                      handleOk={handleOk}
+                      selectedProvider={selectedProvider}
+                      setSelectedProvider={setSelectedProvider}
+                      providerModels={providerModels}
+                      setProviderModelsFn={setProviderModelsFn}
+                      getPlaceholder={getPlaceholder}
+                      uploadProps={uploadProps}
+                      showAdvancedSettings={showAdvancedSettings}
+                      setShowAdvancedSettings={setShowAdvancedSettings}
+                      teams={teams}
+                      credentials={credentialsList}
+                      accessToken={accessToken}
+                      userRole={userRole}
+                      premiumUser={premiumUser}
+                    />
+                  </TabPanel>
+                )}
                 <TabPanel>
-                  <CredentialsPanel
-                    accessToken={accessToken}
-                    uploadProps={uploadProps}
-                    credentialList={credentialsList}
-                    fetchCredentials={fetchCredentials}
-                  />
+                  <CredentialsPanel uploadProps={uploadProps} />
                 </TabPanel>
                 <TabPanel>
                   <PassThroughSettings
