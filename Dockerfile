@@ -1,41 +1,22 @@
-<<<<<<< HEAD
 # OrizonLLM Dockerfile
-# Uses slim images for faster builds (pre-built wheels available)
+# Uses Chainguard Wolfi base for enhanced security (fewer CVEs)
 
-ARG LITELLM_BUILD_IMAGE=python:3.11-slim
-ARG LITELLM_RUNTIME_IMAGE=python:3.11-slim
-
-=======
-# Base image for building
+# Base image for building (Chainguard secure image)
 ARG LITELLM_BUILD_IMAGE=cgr.dev/chainguard/wolfi-base
 
-# Runtime image
+# Runtime image (Chainguard secure image)
 ARG LITELLM_RUNTIME_IMAGE=cgr.dev/chainguard/wolfi-base
->>>>>>> upstream/main
+
 # Builder stage
 FROM $LITELLM_BUILD_IMAGE AS builder
 
 WORKDIR /app
 USER root
 
-<<<<<<< HEAD
-# Install build dependencies (Debian-based)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
-    libssl-dev \
-    bash \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --upgrade pip>=24.3.1 && \
-    pip install build
-=======
-# Install build dependencies
+# Install build dependencies (Alpine-based with apk)
 RUN apk add --no-cache bash gcc py3-pip python3 python3-dev openssl openssl-dev
 
 RUN python -m pip install build
->>>>>>> upstream/main
 
 # Copy the current directory contents into the container
 COPY . .
@@ -65,24 +46,8 @@ FROM $LITELLM_RUNTIME_IMAGE AS runtime
 
 USER root
 
-<<<<<<< HEAD
-# Install runtime dependencies (Debian-based)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    tzdata \
-    nodejs \
-    npm \
-    bash \
-    supervisor \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Upgrade pip
-RUN pip install --upgrade pip>=24.3.1
-=======
-# Install runtime dependencies
-RUN apk add --no-cache bash openssl tzdata nodejs npm python3 py3-pip
->>>>>>> upstream/main
+# Install runtime dependencies (Alpine-based with apk)
+RUN apk add --no-cache bash openssl tzdata nodejs npm python3 py3-pip supervisor
 
 WORKDIR /app
 
@@ -98,8 +63,8 @@ COPY --from=builder /wheels/ /wheels/
 RUN pip install *.whl /wheels/* --no-index --find-links=/wheels/ && rm -f *.whl && rm -rf /wheels
 
 # Remove test files from dependencies
-RUN find /usr/local/lib -type f -path "*/tornado/test/*" -delete 2>/dev/null || true && \
-    find /usr/local/lib -type d -path "*/tornado/test" -delete 2>/dev/null || true
+RUN find /usr/lib -type f -path "*/tornado/test/*" -delete 2>/dev/null || true && \
+    find /usr/lib -type d -path "*/tornado/test" -delete 2>/dev/null || true
 
 # Install semantic_router and aurelio-sdk
 RUN chmod +x docker/install_auto_router.sh && ./docker/install_auto_router.sh
