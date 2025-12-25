@@ -130,16 +130,14 @@ const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="w-full">
-        <div className="flex items-center h-28 px-4">
-          {" "}
-          {/* Increased height for larger logo */}
+        <div className="flex items-center h-auto py-4 px-4">
           {/* Left side with collapse toggle and logo */}
           <div className="flex items-center flex-shrink-0">
-            {/* Collapse/Expand Toggle Button - Larger */}
+            {/* Collapse/Expand Toggle Button */}
             {onToggleSidebar && (
               <button
                 onClick={onToggleSidebar}
-                className="flex items-center justify-center w-10 h-10 mr-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center justify-center w-10 h-10 mr-4 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                 title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 <span className="text-lg">{sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}</span>
@@ -147,7 +145,7 @@ const Navbar: React.FC<NavbarProps> = ({
             )}
 
             <Link href="/" className="flex items-center">
-              <img src={imageUrl} alt="OrizonLLM" className="h-[100px] w-auto" />
+              <img src={imageUrl} alt="OrizonLLM" className="h-[15vh] max-h-[250px] min-h-[80px] w-auto object-contain" />
             </Link>
           </div>
           {/* Right side nav items */}
