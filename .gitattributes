@@ -21,3 +21,13 @@ UPDATE_PLAN.md merge=ours
 # Custom scripts
 scripts/check-license-changes.sh merge=ours
 scripts/sync-upstream.sh merge=ours
+
+# ============================================================================
+# UI BUILD ARTIFACTS - Never merge, always rebuild
+# ============================================================================
+# The _experimental/out directory contains pre-built Next.js UI files.
+# Merging these causes hash mismatches and 404 errors.
+# After any upstream merge, run: ./scripts/sync-ui-build.sh
+# ============================================================================
+litellm/proxy/_experimental/out/** merge=ours
+litellm/proxy/_experimental/out/**/* merge=ours

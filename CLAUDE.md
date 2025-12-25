@@ -157,12 +157,37 @@ git checkout --ours CLAUDE.md && git add CLAUDE.md
 | `ui/litellm-dashboard/src/components/navbar.tsx` | Logo size customization |
 | `ui/litellm-dashboard/src/app/favicon.ico` | OrizonLLM favicon |
 | `litellm/proxy/proxy_server.py` | CORS customization (line 929-937) |
+| `litellm/proxy/_experimental/out/**` | UI build artifacts (sync after merge) |
 
 ### Documentation
 
 - `UPDATE_PLAN.md` - Full upstream sync procedure and conflict resolution
 - `scripts/check-license-changes.sh` - Detect new license checks in upstream
 - `scripts/sync-upstream.sh` - Automated sync with protected file handling
+- `scripts/sync-ui-build.sh` - Sync UI build after upstream merge
+
+### UI Build Artifacts (CRITICAL)
+
+The `litellm/proxy/_experimental/out/` directory contains pre-built Next.js UI files.
+**These files CANNOT be safely merged** - merging causes HTML corruption and 404 errors.
+
+**What happens if merged incorrectly:**
+- HTML files get two `<!DOCTYPE>` declarations concatenated
+- Chunk hashes mismatch (e.g., `2117-bb4323b3c0b11a1f.js` vs `2117-26a589a1115bdd0a.js`)
+- Browser gets 404 errors for JS chunks
+- UI completely breaks
+
+**The sync-upstream.sh script handles this automatically by:**
+1. Resolving _experimental/out conflicts with `--ours`
+2. Copying clean build from `ui/litellm-dashboard/out/`
+3. Staging the changes
+
+**If UI breaks after merge, fix with:**
+```bash
+./scripts/sync-ui-build.sh
+git add litellm/proxy/_experimental/out
+git commit -m "fix: sync UI build"
+```
 
 ## Docker Deployment (GHCR + Railway)
 

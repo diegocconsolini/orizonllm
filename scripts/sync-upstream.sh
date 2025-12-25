@@ -123,6 +123,27 @@ for file in "${PROTECTED_FILES[@]}"; do
     fi
 done
 
+# Auto-resolve UI build artifacts (keep ours, then sync from source)
+echo ""
+echo "--- Syncing UI build artifacts ---"
+# First, resolve any _experimental/out conflicts by keeping ours
+if git ls-files -u 2>/dev/null | grep -q "_experimental/out"; then
+    echo "  Resolving _experimental/out conflicts (keeping ours)..."
+    git checkout --ours "litellm/proxy/_experimental/out" 2>/dev/null || true
+    git add "litellm/proxy/_experimental/out" 2>/dev/null || true
+fi
+
+# Then sync from the source UI build to ensure consistency
+if [ -d "ui/litellm-dashboard/out" ]; then
+    echo "  Syncing UI from ui/litellm-dashboard/out..."
+    rm -rf "litellm/proxy/_experimental/out"
+    cp -r "ui/litellm-dashboard/out" "litellm/proxy/_experimental/out"
+    git add "litellm/proxy/_experimental/out"
+    echo "  UI sync complete"
+else
+    echo "  WARNING: ui/litellm-dashboard/out not found. Run 'npm run build' in ui/litellm-dashboard after merge."
+fi
+
 # Check for remaining conflicts
 REMAINING_CONFLICTS=$(git ls-files -u 2>/dev/null | cut -f2 | sort -u)
 
