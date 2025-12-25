@@ -221,6 +221,7 @@ git push origin main
 |--------|---------|
 | `scripts/check-license-changes.sh` | **Run first!** Detect new license checks in upstream |
 | `scripts/sync-upstream.sh` | Full sync workflow with auto-protection of key files |
+| `scripts/sync-ui-build.sh` | Sync UI build after upstream merge (auto-called by sync-upstream.sh) |
 
 ### Protected Files (Never Accept Upstream Version)
 
@@ -231,6 +232,9 @@ These files are automatically preserved by `sync-upstream.sh`:
 | `litellm/proxy/auth/litellm_license.py` | **License bypass** - `is_premium()` returns `True` |
 | `README.md` | OrizonLLM branding |
 | `CLAUDE.md` | Custom development guide |
+| `litellm/proxy/_experimental/out/**` | UI build artifacts (synced from ui/litellm-dashboard/out) |
+
+**⚠️ UI Build Artifacts:** The `_experimental/out` directory contains pre-built Next.js files that cannot be merged. Merging corrupts HTML files causing 404 errors. The sync script automatically copies clean builds from `ui/litellm-dashboard/out/`.
 
 ### License Bypass Details
 
@@ -278,13 +282,34 @@ export REGISTRY_TYPE=ghcr
 ### Build and Push
 
 ```bash
-# Build and push with version tag
-./scripts/maintenance/build-and-push.sh v1.60.0
+# Non-interactive build and push
+./scripts/maintenance/build-and-push.sh -y
+
+# Or with specific version
+./scripts/maintenance/build-and-push.sh -y v1.60.0
+
+# Manual build with SHA tag (recommended for Railway)
+SHA=$(git rev-parse --short HEAD)
+docker build -t ghcr.io/diegocconsolini/orizonllm:$SHA \
+             -t ghcr.io/diegocconsolini/orizonllm:latest \
+             -f Dockerfile .
+docker push ghcr.io/diegocconsolini/orizonllm:$SHA
+docker push ghcr.io/diegocconsolini/orizonllm:latest
 
 # Images created:
-# - ghcr.io/username/orizonllm:v1.60.0
-# - ghcr.io/username/orizonllm:20251206
-# - ghcr.io/username/orizonllm:latest
+# - ghcr.io/diegocconsolini/orizonllm:{sha}     (e.g., c361f664b5)
+# - ghcr.io/diegocconsolini/orizonllm:YYYYMMDD
+# - ghcr.io/diegocconsolini/orizonllm:latest
+```
+
+### Deploy to Railway
+
+```bash
+# Update image reference (use SHA for guaranteed version)
+railway variables --set "RAILWAY_DOCKER_IMAGE=ghcr.io/diegocconsolini/orizonllm:$SHA" -s orizonllm
+
+# Redeploy
+railway service orizonllm && railway redeploy --yes
 ```
 
 ### Deploy from Registry
@@ -403,10 +428,11 @@ orizonllm/
 │       └── logo.jpg                 # Orizon logo
 ├── ui/                         # Dashboard UI
 ├── scripts/
-│   └── maintenance/            # Update workflow scripts
-│       ├── update-orizon.sh    # Main update tool
-│       ├── sync-upstream.sh    # Sync with LiteLLM
-│       └── build-and-push.sh   # Build & push Docker
+│   ├── check-license-changes.sh  # Detect upstream license changes
+│   ├── sync-upstream.sh          # Sync with LiteLLM (auto-protects files)
+│   ├── sync-ui-build.sh          # Sync UI after merge
+│   └── maintenance/
+│       └── build-and-push.sh     # Build & push Docker (-y for non-interactive)
 ├── docker-compose.yml          # Local development
 ├── Dockerfile                  # Container build
 ├── config.yaml                 # Model configuration
@@ -499,14 +525,14 @@ OrizonLLM is deployed on Railway for AudiVidi.
 | Service | Image/Source | Port |
 |---------|--------------|------|
 | orizonllm | `ghcr.io/diegocconsolini/orizonllm:latest` (private) | 4000 |
-| Postgres | Railway managed | 5432 |
+| pgvector | `pgvector/pgvector:pg17` (vector search enabled) | 5432 |
 | Redis | Railway managed | 6379 |
 
 ### Environment Variables (Railway)
 
 ```bash
 # Database (auto-set via Railway references)
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+DATABASE_URL=${{pgvector.DATABASE_URL}}
 REDIS_URL=${{Redis.REDIS_URL}}
 REDIS_HOST=${{Redis.REDISHOST}}
 REDIS_PASSWORD=${{Redis.REDIS_PASSWORD}}
