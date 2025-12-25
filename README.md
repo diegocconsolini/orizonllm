@@ -562,17 +562,21 @@ DEEPGRAM_API_KEY=...
 | `gpt-4o-mini` | OpenAI | chat |
 | `groq/llama-3.1-8b-instant` | Groq | chat |
 
-### CI/CD Pipeline
+### Manual Deployment
 
-**Auto-deploy on push to `main`:**
+**Build and deploy steps:**
 
-1. GitHub Actions builds Docker image
-2. Pushes to `ghcr.io/diegocconsolini/orizonllm:latest` (private)
-3. Triggers Railway redeploy
+```bash
+# 1. Build and push to GHCR
+./scripts/maintenance/build-and-push.sh -y
 
-**GitHub Secrets required:**
-- `RAILWAY_SERVICE_ID` - OrizonLLM service ID
-- `RAILWAY_TOKEN` - Railway API token
+# 2. Get the SHA tag
+SHA=$(git rev-parse --short HEAD)
+
+# 3. Update Railway and redeploy
+railway variables --set "RAILWAY_DOCKER_IMAGE=ghcr.io/diegocconsolini/orizonllm:$SHA" -s orizonllm
+railway redeploy --yes -s orizonllm
+```
 
 ### Railway Registry Credentials
 
