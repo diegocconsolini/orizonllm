@@ -111,6 +111,14 @@ LiteLLM is a unified interface for 100+ LLM providers with two main components:
 
 This is a fork of [BerriAI/litellm](https://github.com/BerriAI/litellm) with custom modifications.
 
+### CRITICAL: Never Interact with Upstream Repository
+
+**NEVER create issues, PRs, comments, or any interaction on `BerriAI/litellm`.**
+
+- All GitHub operations (issues, PRs, etc.) → `diegocconsolini/orizonllm` ONLY
+- The `upstream` remote is for fetching code only, never for pushing or creating issues
+- Any visible activity on the upstream repo exposes this fork's existence
+
 ### Key Customizations
 
 1. **License Bypass** (`litellm/proxy/auth/litellm_license.py`)
