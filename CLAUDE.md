@@ -256,3 +256,46 @@ railway variables --set 'DATABASE_URL=${{pgvector.DATABASE_URL}}' -s orizonllm
 | `{short-sha}` | Git commit SHA (e.g., `d9d5efc617`) |
 
 Always use SHA tags for Railway deployments to ensure the correct version is pulled.
+
+## Vector Stores (pgvector)
+
+OrizonLLM includes a pgvector connector for RAG (Retrieval-Augmented Generation) workflows.
+
+### Architecture
+
+```
+OrizonLLM Proxy (api.audividi.ai)
+  └─> pgvector Connector (pgvector-connector-production.up.railway.app)
+        └─> PostgreSQL + pgvector extension
+```
+
+### Connector Repository
+
+- **Fork**: `github.com/diegocconsolini/litellm-pgvector`
+- **Image**: `ghcr.io/diegocconsolini/litellm-pgvector:latest`
+- **Auto-builds**: On push to main via GitHub Actions
+
+### Railway Configuration
+
+```bash
+# pgvector-connector service variables
+DATABASE_URL=${{pgvector.DATABASE_URL}}
+SERVER_API_KEY=<your-connector-api-key>
+EMBEDDING__MODEL=text-embedding-3-small
+EMBEDDING__BASE_URL=http://orizonllm.railway.internal:4000
+EMBEDDING__API_KEY=<orizonllm-api-key-with-embedding-access>
+PORT=8000
+```
+
+### Key Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/vector_stores` | Create vector store |
+| `POST /v1/vector_stores/{id}/embeddings` | Add embedding |
+| `POST /v1/vector_stores/{id}/search` | Search vectors |
+| `GET /health` | Health check |
+
+### Documentation
+
+Full manual: https://github.com/diegocconsolini/orizonllm/wiki/Vector-Stores

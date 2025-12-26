@@ -31,7 +31,8 @@ OrizonLLM is a **customized fork of LiteLLM** that provides:
 | Custom Branding (OrizonLLM) | Enabled |
 | SSO (Azure AD, Okta, Google) | Enabled |
 | Audit Logs | Enabled |
-| Semantic Cache (pgvector) | Enabled |
+| Semantic Cache (Redis) | Enabled |
+| Vector Stores (pgvector RAG) | Enabled |
 | Azure Key Vault Integration | Enabled |
 
 ---
