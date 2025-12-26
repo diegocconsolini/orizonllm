@@ -24,7 +24,8 @@
       "Bash(docker run:*)",
       "Bash(timeout 15 railway logs:*)",
       "Bash(docker build:*)",
-      "Bash(gh issue list:*)"
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
