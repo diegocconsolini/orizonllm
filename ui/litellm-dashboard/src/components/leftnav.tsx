@@ -24,11 +24,12 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Badge, ConfigProvider, Layout, Menu } from "antd";
+import { ConfigProvider, Layout, Menu } from "antd";
 import { useMemo } from "react";
 import { all_admin_roles, internalUserRoles, isAdminRole, rolesWithWriteAccess } from "../utils/roles";
 import type { Organization } from "./networking";
 import UsageIndicator from "./usage_indicator";
+import NewBadge from "./common_components/NewBadge";
 const { Sider } = Layout;
 
 // Define the props type
@@ -57,7 +58,7 @@ interface MenuGroup {
 
 const Sidebar: React.FC<SidebarProps> = ({ setPage, defaultSelectedKey, collapsed = false }) => {
   const { userId, accessToken, userRole } = useAuthorized();
-  const { data: organizations } = useOrganizations(accessToken);
+  const { data: organizations } = useOrganizations();
 
   // Check if user is an org_admin
   const isOrgAdmin = useMemo(() => {
@@ -103,11 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setPage, defaultSelectedKey, collapse
         {
           key: "agents",
           page: "agents",
-          label: (
-            <span className="flex items-center gap-4">
-              Agents <Badge color="blue" count="New" />
-            </span>
-          ),
+          label: <span className="flex items-center gap-4">Agents</span>,
           icon: <RobotOutlined />,
           roles: rolesWithWriteAccess,
         },
@@ -155,16 +152,16 @@ const Sidebar: React.FC<SidebarProps> = ({ setPage, defaultSelectedKey, collapse
           page: "new_usage",
           icon: <BarChartOutlined />,
           roles: [...all_admin_roles, ...internalUserRoles],
-          label: (
-            <span className="flex items-center gap-4">
-              Usage <Badge color="blue" count="New" />
-            </span>
-          ),
+          label: "Usage",
         },
         {
           key: "logs",
           page: "logs",
-          label: "Logs",
+          label: (
+            <span className="flex items-center gap-4">
+              Logs <NewBadge />
+            </span>
+          ),
           icon: <LineChartOutlined />,
         },
       ],
@@ -267,7 +264,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setPage, defaultSelectedKey, collapse
         {
           key: "settings",
           page: "settings",
-          label: "Settings",
+          label: <span className="flex items-center gap-4">Settings</span>,
           icon: <SettingOutlined />,
           roles: all_admin_roles,
           children: [

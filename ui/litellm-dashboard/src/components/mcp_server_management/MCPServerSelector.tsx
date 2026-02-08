@@ -23,8 +23,8 @@ const MCPServerSelector: React.FC<MCPServerSelectorProps> = ({
   placeholder = "Select MCP servers",
   disabled = false,
 }) => {
-  const { data: mcpServers = [], isLoading: serversLoading } = useMCPServers(accessToken);
-  const { data: accessGroups = [], isLoading: groupsLoading } = useMCPAccessGroups(accessToken);
+  const { data: mcpServers = [], isLoading: serversLoading } = useMCPServers();
+  const { data: accessGroups = [], isLoading: groupsLoading } = useMCPAccessGroups();
 
   const loading = serversLoading || groupsLoading;
 
@@ -63,6 +63,7 @@ const MCPServerSelector: React.FC<MCPServerSelectorProps> = ({
         value={selectedValues}
         loading={loading}
         className={className}
+        allowClear
         showSearch
         style={{ width: "100%" }}
         disabled={disabled}
