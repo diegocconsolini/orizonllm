@@ -2,10 +2,16 @@
 
 ## Current Situation
 
-- **Your fork point**: `4fffd33ccf36` (from BerriAI/litellm)
-- **Your custom commits**: 78 commits (including rebranding to "OrizonLLM")
-- **Upstream commits ahead**: 499 commits
-- **Upstream remote**: Already configured as `upstream` pointing to `git@github.com:BerriAI/litellm.git`
+- **Current version**: v1.81.0 (synced 2026-02-09)
+- **Previous version**: v1.80.11 (synced 2025-12-26)
+- **Upstream remote**: `upstream` pointing to `https://github.com/BerriAI/litellm.git`
+
+### Sync History
+
+| Date | From | To | Commits | Notes |
+|------|------|----|---------|-------|
+| 2026-02-09 | v1.80.11 | v1.81.0-stable | ~1200 | A2A agents, MCP global mode, 25% CPU reduction |
+| 2025-12-26 | fork point | v1.80.11 | ~499 | Initial upstream sync |
 
 ## Goal
 

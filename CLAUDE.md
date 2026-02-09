@@ -199,20 +199,23 @@ git commit -m "fix: sync UI build"
 
 ## Docker Deployment (GHCR + Railway)
 
+**Current deployed version:** v1.81.0 (2026-02-09)
+
 ### Building and Pushing to GHCR
+
+**IMPORTANT:** Railway requires `linux/amd64` images. On Apple Silicon (M1/M2/M3), you MUST use `docker buildx` with `--platform linux/amd64`:
 
 ```bash
 # Get current commit SHA for unique tag
 SHA=$(git rev-parse --short HEAD)
 
-# Build with commit SHA tag
-docker build -t ghcr.io/diegocconsolini/orizonllm:$SHA \
-             -t ghcr.io/diegocconsolini/orizonllm:latest \
-             -f Dockerfile .
-
-# Push to GitHub Container Registry
-docker push ghcr.io/diegocconsolini/orizonllm:$SHA
-docker push ghcr.io/diegocconsolini/orizonllm:latest
+# Build for linux/amd64 and push directly (recommended on Apple Silicon)
+docker buildx build \
+    --platform linux/amd64 \
+    -t ghcr.io/diegocconsolini/orizonllm:$SHA \
+    -t ghcr.io/diegocconsolini/orizonllm:latest \
+    --push \
+    -f Dockerfile .
 ```
 
 ### Non-Interactive Build Script
@@ -222,7 +225,7 @@ docker push ghcr.io/diegocconsolini/orizonllm:latest
 ./scripts/maintenance/build-and-push.sh -y
 
 # Or with specific version
-./scripts/maintenance/build-and-push.sh -y v1.60.0
+./scripts/maintenance/build-and-push.sh -y v1.81.0
 ```
 
 ### Railway Deployment
@@ -253,9 +256,17 @@ railway variables --set 'DATABASE_URL=${{pgvector.DATABASE_URL}}' -s orizonllm
 |-----|-------------|
 | `latest` | Most recent build |
 | `YYYYMMDD` | Date-based tag |
-| `{short-sha}` | Git commit SHA (e.g., `d9d5efc617`) |
+| `{short-sha}` | Git commit SHA (e.g., `7543f14f69`) |
+| `v1.81.0` | Version tag (matches upstream LiteLLM version) |
 
-Always use SHA tags for Railway deployments to ensure the correct version is pulled.
+Always use version or SHA tags for Railway deployments to ensure the correct version is pulled.
+
+### Checking Deployed Version
+
+```bash
+# Via API (requires auth)
+curl -s -H "Authorization: Bearer $LITELLM_API_KEY" https://api.audividi.ai/health/readiness | grep litellm_version
+```
 
 ## Vector Stores (pgvector)
 
